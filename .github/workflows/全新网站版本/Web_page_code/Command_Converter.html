@@ -1,0 +1,540 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>南风工具箱</title>
+    <link rel="icon" href="../Picture/Repeating_Command_Block.png" type="image/png">
+    <link rel="stylesheet" href="../css/global.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <script src="../js/particles.js"></script>
+    <script src="../js/baidu_statistics.js"></script>
+</head>
+<body>
+    <canvas id="canvas"></canvas>
+    
+    <!-- 错误提示模态框 -->
+    <div id="error-modal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>错误提示</h3>
+            </div>
+            <div class="modal-body">
+                <p id="error-message"></p>
+            </div>
+            <div class="modal-footer">
+                <button id="error-close" class="modal-btn">确定</button>
+            </div>
+        </div>
+    </div>
+    
+
+    
+    <div class="container main-card">
+        <h1>指令转换工具</h1>
+        
+        <div id="batch-convert-panel" class="mode-panel active">
+            <div class="batch-converter">
+                <h3>批量转换（基岩版 → Java版）</h3>
+                <p>专门用于转换本网站生成的基岩版指令文件（.zip格式），内部包含 .mcfunction 文件</p>
+                
+                <div class="step-by-step-guide">
+                    <h4>操作步骤：</h4>
+                    <ol>
+                        <li>在本站其他工具（如坐标生成、文字粒子等）中生成基岩版指令文件</li>
+                        <li>下载生成的 .zip 压缩包</li>
+                        <li>点击下方的「选择文件」按钮，选择下载的 .zip 压缩包</li>
+                        <li>或直接将 .zip 压缩包拖放到下方的拖放区域</li>
+                        <li>系统会自动检测并开始转换</li>
+                        <li>等待转换完成后，点击「下载转换结果」按钮获取转换后的Java版指令文件</li>
+                    </ol>
+                </div>
+                
+                <div id="drop-zone" class="drop-zone">
+                    <div class="drop-zone-content">
+                        <svg width="60" height="60" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                            <polyline points="17 8 12 3 7 8"></polyline>
+                            <line x1="12" y1="3" x2="12" y2="15"></line>
+                        </svg>
+                        <p>拖放 .zip 压缩包到这里</p>
+                        <p class="drop-zone-hint">或</p>
+                        <button id="select-file-btn" class="select-file-btn">选择文件</button>
+                        <input type="file" id="file-input" accept=".zip" style="display: none;">
+                    </div>
+                </div>
+
+                <div id="file-info" class="file-info" style="display: none;">
+                    <div class="file-info-content">
+                        <span id="file-name"></span>
+                        <button id="remove-file" class="remove-file-btn">×</button>
+                    </div>
+                </div>
+
+                <div class="button-container">
+                    <button id="download-results" class="menu-btn" style="display: none;">下载转换结果</button>
+                </div>
+
+                <div id="batch-progress" class="batch-progress" style="display: none;">
+                    <div class="progress-bar-container">
+                        <div id="progress-bar" class="progress-bar"></div>
+                    </div>
+                    <div id="progress-text" class="progress-text">处理中...</div>
+                </div>
+
+                <div id="batch-results" class="batch-results" style="display: none;">
+                    <h4>转换结果</h4>
+                    <div id="results-summary" class="results-summary"></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="note">
+            注意：部分复杂指令可能无法完全转换，请手动调整。支持的指令包括：give、tp、kill、time、gamemode、weather等常用指令。
+        </div>
+    </div>
+
+    <script>
+        function convertBedrockToJava(command) {
+            let result = command;
+
+            // 验证是否为本网站生成的指令
+            const isOurWebsiteCommand = 
+                command.includes('scores={分数=') || // 坐标生成工具
+                (command.includes('particle') && command.includes('^')) || // 文字/图片粒子生成工具
+                command.includes('scoreboard objectives add 分数'); // 坐标生成工具
+            
+            if (!isOurWebsiteCommand) {
+                return command; // 不是本网站生成的指令，不转换
+            }
+
+            // 处理 execute 指令 - 基岩版到Java版转换
+            // 处理所有 execute 指令格式，统一转换为 Java 版格式
+            result = result.replace(/(\/?)execute\s+(@[a-z](?:\[.*?\])?)\s+(?:([-\d.]+)\s+([-\d.]+)\s+([-\d.]+)|~\s+~\s+~)\s*(?:run\s+)?(.+)/i, (match, slash, target, x, y, z, cmd) => {
+                // 特殊处理 clone 指令，添加 positioned ^ ^ ^ unless block 条件
+                if (cmd.trim().startsWith('clone')) {
+                    // 替换分数名称和值
+                    const modifiedTarget = target.replace('scores={分数=1}', 'scores={score=104}');
+                    // 提取原始 clone 指令的参数
+                    const cloneMatch = cmd.trim().match(/clone\s+([-\d.]+)\s+([-\d.]+)\s+([-\d.]+)\s+([-\d.]+)\s+([-\d.]+)\s+([-\d.]+)\s+([-\d.]+)\s+([-\d.]+)\s+([-\d.]+)\s*(\w*)\s*(\w*)/i);
+                    if (cloneMatch) {
+                        const [, x1, y1, z1, x2, y2, z2, x, y, z, mode, method] = cloneMatch;
+                        // 构造新的指令格式，使用原始坐标
+                        return `${slash}execute as ${modifiedTarget} at @s run execute positioned ^ ^ ^ unless block ${x1} ${y1} ${z1} air run clone ${x1} ${y1} ${z1} ${x2} ${y2} ${z2} ${x} ${y} ${z} ${mode || ''} ${method || ''}`;
+                    } else {
+                        return `${slash}execute as ${target} at @s run ${cmd}`;
+                    }
+                } else {
+                    return `${slash}execute as ${target} at @s run ${cmd}`;
+                }
+            });
+
+            // 处理粒子指令 - 基岩版到Java版转换
+            // 基岩版格式: particle <effect> <pos> <delta> <speed> <count>
+            // Java版格式: particle <effect> <pos> <delta> <speed> <count> [force|normal]
+            // 根据用户选择的移动效果类型应用不同的移动参数
+            result = result.replace(/(\/?)particle\s+([\w:]+)\s+([^\s]+)\s+([^\s]+)\s+([^\s]+)(?:\s+([^\s]+))?(?:\s+([^\s]+))?(?:\s+([^\s]+))?/i, (match, slash, effect, x, y, z, delta, speed, count) => {
+                let finalDeltaX = delta || 0;
+                let finalDeltaY = delta || 0;
+                let finalDeltaZ = delta || 0;
+                let finalSpeed = speed || 0;
+                let finalCount = count || 0;
+                
+                // 基岩版到Java版的粒子效果名称映射
+                const particleNameMap = {
+                    'minecraft:endrod': 'minecraft:end_rod'
+                };
+                
+                // 转换粒子效果名称
+                let convertedEffect = effect;
+                if (particleNameMap[effect.toLowerCase()]) {
+                    convertedEffect = particleNameMap[effect.toLowerCase()];
+                }
+                
+                // 使用当前选择的粒子移动效果类型
+                const animationType = currentParticleAnimationType;
+                
+                // 根据选择的移动效果类型设置参数
+                if (animationType === 'up') {
+                    // 向上移动的效果 - 粒子向上移动较大的距离
+                    finalDeltaX = 0;
+                    finalDeltaY = 2;
+                    finalDeltaZ = 0;
+                    finalSpeed = 0.5;
+                } else if (animationType === 'float') {
+                    // 向上漂浮的效果 - 粒子向上漂浮，有轻微的横向移动
+                    finalDeltaX = 0.3;
+                    finalDeltaY = 1.5;
+                    finalDeltaZ = 0.3;
+                    finalSpeed = 0.3;
+                } else if (animationType === 'down') {
+                    // 向下坠落的效果 - 粒子向下坠落
+                    finalDeltaX = 0;
+                    finalDeltaY = -2;
+                    finalDeltaZ = 0;
+                    finalSpeed = 0.5;
+                } else if (animationType === 'slow-up') {
+                    // 缓慢上升的效果 - 粒子缓慢向上移动
+                    finalDeltaX = 0.1;
+                    finalDeltaY = 0.5;
+                    finalDeltaZ = 0.1;
+                    finalSpeed = 0.1;
+                } else if (animationType === 'random') {
+                    // 随机移动的效果 - 粒子向各个方向随机移动，像炸开一样
+                    finalDeltaX = 1;
+                    finalDeltaY = 1;
+                    finalDeltaZ = 1;
+                    finalSpeed = 0.8;
+                } else {
+                    // 无移动效果（默认）
+                    finalDeltaX = 0;
+                    finalDeltaY = 0;
+                    finalDeltaZ = 0;
+                    finalSpeed = 0;
+                }
+                
+                // 构造最终的粒子指令
+                return `${slash}particle ${convertedEffect} ${x} ${y} ${z} ${finalDeltaX} ${finalDeltaY} ${finalDeltaZ} ${finalSpeed} ${finalCount} force`;
+            });
+
+            // 处理效果指令 - 基岩版到Java版转换
+            result = result.replace(/effect\s+(@[a-z](?:\[.*?\])?)\s+([\w:]+)\s*(\d*)\s*(\d*)/i, 'effect give $1 $2 $3 $4');
+            result = result.replace(/\/effect\s+(@[a-z](?:\[.*?\])?)\s+([\w:]+)\s*(\d*)\s*(\d*)/i, '/effect give $1 $2 $3 $4');
+
+            // 处理经验值指令 - 基岩版到Java版转换
+            result = result.replace(/xp\s+(@[a-z](?:\[.*?\])?)\s+(\d+)/i, 'xp add $1 $2 points');
+            result = result.replace(/\/xp\s+(@[a-z](?:\[.*?\])?)\s+(\d+)/i, '/xp add $1 $2 points');
+
+            // 确保指令格式正确
+            result = result.replace(/^\s*\/\s*/, '/');
+            result = result.trim();
+
+            return result;
+        }
+
+        let selectedFile = null;
+        let convertedResults = [];
+        let originalResults = [];
+        let hasParticleCommands = false;
+        let currentParticleAnimationType = 'none';
+        const dropZone = document.getElementById('drop-zone');
+        const fileInput = document.getElementById('file-input');
+        const selectFileBtn = document.getElementById('select-file-btn');
+        const fileInfo = document.getElementById('file-info');
+        const fileName = document.getElementById('file-name');
+        const removeFileBtn = document.getElementById('remove-file');
+        const downloadResultsBtn = document.getElementById('download-results');
+        const batchProgress = document.getElementById('batch-progress');
+        const progressBar = document.getElementById('progress-bar');
+        const progressText = document.getElementById('progress-text');
+        const batchResults = document.getElementById('batch-results');
+        const resultsSummary = document.getElementById('results-summary');
+        const errorModal = document.getElementById('error-modal');
+        const errorMessage = document.getElementById('error-message');
+        const errorClose = document.getElementById('error-close');
+
+        dropZone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            dropZone.classList.add('dragover');
+        });
+
+        dropZone.addEventListener('dragleave', () => {
+            dropZone.classList.remove('dragover');
+        });
+
+        dropZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dropZone.classList.remove('dragover');
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                handleFileSelect(files[0]);
+            }
+        });
+
+        selectFileBtn.addEventListener('click', () => {
+            fileInput.click();
+        });
+
+        fileInput.addEventListener('change', (e) => {
+            if (e.target.files.length > 0) {
+                handleFileSelect(e.target.files[0]);
+            }
+        });
+
+        removeFileBtn.addEventListener('click', () => {
+            selectedFile = null;
+            fileInfo.style.display = 'none';
+            fileInput.value = '';
+        });
+
+        errorClose.addEventListener('click', () => {
+            errorModal.style.display = 'none';
+        });
+
+        // 点击模态框外部关闭
+        window.addEventListener('click', (e) => {
+            if (e.target == errorModal) {
+                errorModal.style.display = 'none';
+            }
+        });
+
+        // 显示错误信息
+        function showError(message) {
+            errorMessage.textContent = message;
+            errorModal.style.display = 'block';
+        }
+
+        async function handleFileSelect(file) {
+            if (!file.name.endsWith('.zip')) {
+                showError('请选择 .zip 压缩格式文件');
+                return;
+            }
+
+            selectedFile = file;
+            fileName.textContent = file.name;
+            fileInfo.style.display = 'block';
+
+            // 自动开始转换
+            convertedResults = [];
+            batchProgress.style.display = 'block';
+            batchResults.style.display = 'none';
+            downloadResultsBtn.style.display = 'none';
+            progressBar.style.width = '0%';
+            progressText.textContent = '处理中...';
+
+            try {
+                await processZipFile(selectedFile);
+                displayResults();
+            } catch (error) {
+                console.error('转换失败:', error);
+                showError('转换失败: ' + error.message);
+                batchProgress.style.display = 'none';
+            }
+        }
+
+        // 批量转换按钮已移除，转换过程自动触发
+
+        async function processZipFile(zipFile) {
+            const zip = new JSZip();
+            const contents = await zip.loadAsync(zipFile);
+            const files = Object.keys(contents.files);
+            let totalCommands = 0;
+            let hasMcFunctionFiles = false;
+            hasParticleCommands = false;
+
+            // 先检查是否包含 .mcfunction 文件
+            for (const filename of files) {
+                const zipEntry = contents.files[filename];
+                if (!zipEntry.dir && filename.endsWith('.mcfunction')) {
+                    hasMcFunctionFiles = true;
+                    break;
+                }
+            }
+
+            // 如果没有 .mcfunction 文件，显示错误
+            if (!hasMcFunctionFiles) {
+                throw new Error('上传的文件中未找到 .mcfunction 文件，请确保上传的是包含基岩版指令文件的 .zip 压缩包');
+            }
+
+            // 计算总指令数并检测是否包含粒子指令
+            for (const filename of files) {
+                const zipEntry = contents.files[filename];
+                if (!zipEntry.dir && filename.endsWith('.mcfunction')) {
+                    const content = await zipEntry.async('string');
+                    const lines = content.split('\n').filter(line => line.trim());
+                    totalCommands += lines.length;
+                    
+                    // 检测是否包含粒子指令
+                    if (!hasParticleCommands) {
+                        for (const line of lines) {
+                            if (line.includes('particle')) {
+                                hasParticleCommands = true;
+                                break;
+                            }
+                        }
+                    }
+                }
+            }
+
+            let currentCommand = 0;
+
+            for (const filename of files) {
+                const zipEntry = contents.files[filename];
+                
+                if (!zipEntry.dir && filename.endsWith('.mcfunction')) {
+                    const content = await zipEntry.async('string');
+                    const lines = content.split('\n').filter(line => line.trim());
+                    
+                    for (const line of lines) {
+                        originalResults.push({
+                            original: line.trim(),
+                            sourceFile: filename
+                        });
+
+                        currentCommand++;
+                        const progress = Math.round((currentCommand / totalCommands) * 100);
+                        progressBar.style.width = progress + '%';
+                        progressText.textContent = `处理中... ${progress}%`;
+                    }
+                }
+            }
+
+            progressText.textContent = '转换完成！';
+        }
+
+        function updateConvertedResults() {
+            // 根据当前选择的粒子移动效果类型重新转换指令
+            convertedResults = originalResults.map(result => ({
+                original: result.original,
+                converted: convertBedrockToJava(result.original),
+                sourceFile: result.sourceFile
+            }));
+        }
+
+        function displayResults() {
+            // 先更新转换结果
+            updateConvertedResults();
+            
+            batchResults.style.display = 'block';
+            downloadResultsBtn.style.display = 'inline-block';
+
+            const totalCommands = convertedResults.length;
+            const uniqueFiles = [...new Set(convertedResults.map(r => r.sourceFile))].length;
+
+            let summaryHTML = `
+                <p><strong>转换统计：</strong></p>
+                <p>总共处理了 ${totalCommands} 条指令</p>
+                <p>来自 ${uniqueFiles} 个 .mcfunction 文件</p>
+            `;
+            
+            // 如果包含粒子指令，显示粒子效果选择器
+            if (hasParticleCommands) {
+                summaryHTML += `
+                    <div class="input-group" style="margin: 20px 0;">
+                        <label>
+                            粒子效果移动类型：
+                            <select id="particle-animation-type" class="form-control">
+                                <option value="none" ${currentParticleAnimationType === 'none' ? 'selected' : ''}>无移动</option>
+                                <option value="up" ${currentParticleAnimationType === 'up' ? 'selected' : ''}>向上移动</option>
+                                <option value="float" ${currentParticleAnimationType === 'float' ? 'selected' : ''}>向上漂浮</option>
+                                <option value="down" ${currentParticleAnimationType === 'down' ? 'selected' : ''}>向下坠落</option>
+                                <option value="slow-up" ${currentParticleAnimationType === 'slow-up' ? 'selected' : ''}>缓慢上升</option>
+                                <option value="random" ${currentParticleAnimationType === 'random' ? 'selected' : ''}>随机移动</option>
+                            </select>
+                        </label>
+                    </div>
+                `;
+            }
+            
+            summaryHTML += `
+                <p><strong>转换结果预览（前10条）：</strong></p>
+                <div style="max-height: 300px; overflow-y: auto; background: white; padding: 10px; border-radius: 10px;">
+            `;
+
+            const previewCount = Math.min(10, convertedResults.length);
+            for (let i = 0; i < previewCount; i++) {
+                const result = convertedResults[i];
+                summaryHTML += `
+                    <div style="margin-bottom: 10px; padding: 8px; background: #f0f8ff; border-radius: 5px;">
+                        <div style="font-size: 0.9rem; color: #666;">来源: ${result.sourceFile}</div>
+                        <div style="margin: 5px 0;">
+                            <strong>基岩版：</strong><br>
+                            <code style="color: #dc3545;">${escapeHtml(result.original)}</code>
+                        </div>
+                        <div>
+                            <strong>Java版：</strong><br>
+                            <code style="color: #28a745;">${escapeHtml(result.converted)}</code>
+                        </div>
+                    </div>
+                `;
+            }
+
+            if (convertedResults.length > 10) {
+                summaryHTML += `<p style="text-align: center; color: #666;">... 还有 ${convertedResults.length - 10} 条指令</p>`;
+            }
+
+            summaryHTML += '</div>';
+            
+            // 保存当前选择的粒子移动效果类型
+            let currentSelectedValue = 'none';
+            const existingSelect = document.getElementById('particle-animation-type');
+            if (existingSelect) {
+                currentSelectedValue = existingSelect.value;
+            }
+            
+            resultsSummary.innerHTML = summaryHTML;
+            
+            // 恢复之前选择的值
+            const newSelect = document.getElementById('particle-animation-type');
+            if (newSelect) {
+                newSelect.value = currentSelectedValue;
+                // 添加事件监听器
+                newSelect.addEventListener('change', function() {
+                    // 获取当前选择的粒子移动效果类型
+                    currentParticleAnimationType = this.value;
+                    // 重新转换指令并更新显示
+                    updateConvertedResults();
+                    displayResults();
+                });
+            }
+        }
+        
+
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        downloadResultsBtn.addEventListener('click', () => {
+            if (convertedResults.length === 0) {
+                alert('没有可下载的转换结果');
+                return;
+            }
+
+            const zip = new JSZip();
+            const fileGroups = {};
+
+            convertedResults.forEach(result => {
+                if (!fileGroups[result.sourceFile]) {
+                    fileGroups[result.sourceFile] = [];
+                }
+                fileGroups[result.sourceFile].push(result.converted);
+            });
+
+            Object.keys(fileGroups).forEach(filename => {
+                const baseName = filename.replace(/\.mcfunction$/, '');
+                const content = fileGroups[filename].join('\n');
+                zip.file(`${baseName}_converted.mcfunction`, content);
+            });
+
+            zip.generateAsync({ type: 'blob' }).then((content) => {
+                const url = URL.createObjectURL(content);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'converted_commands.zip';
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+            });
+        });
+
+        document.addEventListener('copy', function (e) {
+            e.preventDefault();
+            alert("提示：禁止复制页面内容！");
+        });
+
+        document.addEventListener('contextmenu', function (e) {
+            e.preventDefault();
+        });
+
+        document.addEventListener('keydown', function (e) {
+            if (e.ctrlKey && (e.key === 'c' || e.key === 'v' || e.key === 'x' || e.key === 's')) {
+                e.preventDefault();
+            }
+        });
+    </script>
+</body>
+</html>
