@@ -1336,6 +1336,13 @@ button.remove-file-btn:hover {
         font-size: 14px;
         padding: 0.6rem;
         border-radius: 10px;
+        height: 44px;
+        min-height: 44px;
+    }
+    
+    textarea {
+        height: auto;
+        min-height: 100px;
     }
 
     /* 模态框手机端适配 */
