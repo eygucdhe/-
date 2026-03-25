@@ -850,8 +850,9 @@ button.remove-file-btn:hover {
 /* 手机屏幕（＜768px） */
 @media (max-width: 767px) {
     .twist-container {
-        width: 200px;
-        height: 200px;
+        width: 180px;
+        height: 180px;
+        margin: 0 auto 1rem;
     }
 }
 
@@ -1147,60 +1148,79 @@ button.remove-file-btn:hover {
     * {
         font-size: 14px;
     }
+    
+    /* 手机端body样式 */
+    body {
+        padding: 0;
+        margin: 0;
+        background: var(--background-color);
+    }
+    
+    /* 首页body */
+    .home-body {
+        padding: 0;
+        margin: 0;
+    }
 
-    /* 首页卡片 */
+    /* 首页卡片 - 与更多功能页面一致 */
     .home-main-card {
         width: 100%;
-        max-width: none;
         margin: 10px 0;
         border-radius: 16px;
-        padding: 3rem 1rem 1.5rem 1rem;
+        padding: 3rem 0.8rem 1.5rem 0.8rem;
         box-shadow: 0 8px 24px rgba(135, 206, 235, 0.25);
     }
 
     .home-h1 {
-        font-size: 1.4rem;
-        padding-top: 0.3rem;
-        margin-bottom: 0.6rem;
+        font-size: 1.5rem;
+        padding-top: 0.5rem;
+        margin-bottom: 0.8rem;
     }
 
     .desc {
-        font-size: 0.8rem;
-        margin-bottom: 1.5rem;
-        line-height: 1.5;
+        font-size: 0.85rem;
+        margin-bottom: 2rem;
+        line-height: 1.6;
     }
 
-    /* 导航菜单 - 接近电脑版布局 */
+    /* 导航菜单 - 2x2网格布局 */
     .nav-menu {
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        gap: 10px;
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 12px;
         width: 100%;
-        flex-wrap: wrap;
+        max-width: 400px;
+        margin: 0 auto;
+        padding: 0 0.5rem;
     }
 
     .nav-menu .menu-btn {
-        flex: 1;
-        min-width: 120px;
-        height: auto;
-        min-height: 44px;
+        width: 100%;
+        min-width: auto;
+        height: 50px;
         font-size: 0.95rem;
-        padding: 0.6rem 0.8rem;
+        padding: 0.6rem 0.5rem;
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
         border-radius: 15px;
         box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        background: #87ceeb;
+        flex: none;
     }
 
     /* 右上角图标位置 */
     .icon-wrapper,
     .corner-btn {
-        top: 6px !important;
-        right: -25px !important;
-        width: 36px !important;
-        height: 36px !important;
+        top: 10px !important;
+        right: 10px !important;
+        width: 40px !important;
+        height: 40px !important;
+    }
+    
+    .corner-btn img {
+        width: 40px !important;
+        height: 40px !important;
     }
 
     /* 更多功能页面手机端适配 */
