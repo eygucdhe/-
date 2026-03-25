@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>南风工具箱</title>
+    <link rel="icon" href="Picture/Repeating_Command_Block.png" type="image/webp">
+    <script src="js/particles.js"></script>
+    <script src="js/baidu_statistics.js"></script>
+    <link rel="stylesheet" href="css/global.css">
+</head>
+<body class="home-body">
+    <canvas id="canvas"></canvas>
+    <div id="v5" class="home-main-card">
+        <!-- 右上角通知按钮 -->
+        <button id="modalBtn" class="corner-btn">
+            <img src="Picture/Creeper_Charge_Banner_Pattern.png" alt="通知" class="corner-btn-img">
+        </button>
+        <div class="twist-container" id="twistContainer">
+            <img src="Picture/nero1.png" alt="插画1" class="twist-img" id="hair1">
+            <img src="Picture/nero2.png" alt="插画2" class="twist-img" id="hair2">
+        </div>
+
+        <h1 id="v7" class="home-h1">欢迎来到南风工具箱</h1>
+        <p id="v8" class="desc">打赏0.5 &nbsp;&nbsp;&nbsp; 打赏1 &nbsp;&nbsp;&nbsp; 打赏2</p>
+        <div id="v9" class="nav-menu">
+            <a id="v10" href="https://b23.tv/zrFsoIc" class="menu-btn">B站主页</a>
+            <a id="v11" href="https://v.kuaishou.com/7InuP32x" class="menu-btn">快手主页</a>
+            <a id="v12" href="https://v.douyin.com/GyZ2bXGCFeg/" class="menu-btn">抖音主页</a>
+            <a id="v14" href="more_features.html" class="menu-btn">更多工具</a>
+        </div>
+    </div>
+
+    <div id="myModal" class="home-modal">
+        <div class="home-modal-content">
+            <span class="close">&times;</span>
+            <p class="modal-desc">
+                打赏遵循自愿原则<br>
+                是对本站内容及服务的支持非强制付费<br>
+                也与慈善募捐特定商业收费无关<br>
+                感谢您的支持！<br>
+                <label class="music-control">
+                    <input type="checkbox" id="musicToggle"> 开启背景音乐
+                </label>
+            </p>
+        </div>
+    </div>
+
+    <audio id="bgMusic" src="music/录音.m4a" loop preload="auto"></audio>
+
+    <script>
+        let bgMusic;
+        let musicToggle;
+
+        function playMusic() {
+            if (!bgMusic) {
+                bgMusic = document.getElementById('bgMusic');
+            }
+            
+            const playPromise = bgMusic.play();
+            
+            if (playPromise !== undefined) {
+                playPromise
+                    .then(() => {
+                        console.log('音乐播放成功');
+                        removeTempPlayButton();
+                    })
+                    .catch(error => {
+                        console.log('自动播放被阻止:', error);
+                        handleAutoplayRestriction();
+                    });
+            }
+        }
+        
+        function handleAutoplayRestriction() {
+            if (document.getElementById('tempPlayBtn')) {
+                return;
+            }
+            
+            const tempPlayBtn = document.createElement('button');
+            tempPlayBtn.textContent = '点击播放音乐';
+            tempPlayBtn.style.position = 'fixed';
+            tempPlayBtn.style.bottom = '20px';
+            tempPlayBtn.style.right = '20px';
+            tempPlayBtn.style.zIndex = '9999';
+            tempPlayBtn.style.padding = '10px 20px';
+            tempPlayBtn.style.backgroundColor = '#007bff';
+            tempPlayBtn.style.color = 'white';
+            tempPlayBtn.style.border = 'none';
+            tempPlayBtn.style.borderRadius = '5px';
+            tempPlayBtn.style.cursor = 'pointer';
+            tempPlayBtn.id = 'tempPlayBtn';
+            
+            document.body.appendChild(tempPlayBtn);
+            
+            tempPlayBtn.addEventListener('click', function() {
+                const playPromise = bgMusic.play();
+                if (playPromise !== undefined) {
+                    playPromise
+                        .then(() => {
+                            console.log('用户交互后音乐播放成功');
+                            if (tempPlayBtn.parentNode) {
+                                tempPlayBtn.parentNode.removeChild(tempPlayBtn);
+                            }
+                            
+                            if (musicToggle) {
+                                musicToggle.checked = true;
+                            }
+                            localStorage.setItem('playMusic', true);
+                        })
+                        .catch(error => {
+                            console.error('用户交互后播放失败:', error);
+                        });
+                }
+            });
+            
+            console.log('已添加临时播放按钮处理自动播放限制');
+        }
+        
+        function removeTempPlayButton() {
+            const tempBtn = document.getElementById('tempPlayBtn');
+            if (tempBtn && tempBtn.parentNode) {
+                tempBtn.parentNode.removeChild(tempBtn);
+            }
+        }
+        
+        function pauseMusic() {
+            if (!bgMusic) {
+                bgMusic = document.getElementById('bgMusic');
+            }
+            bgMusic.pause();
+            removeTempPlayButton();
+        }
+
+        function saveMusicPref() {
+            if (musicToggle) {
+                localStorage.setItem('playMusic', musicToggle.checked);
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            const modalBtn = document.getElementById('modalBtn');
+            const modal = document.getElementById('myModal');
+            const closeBtn = document.querySelector('.close');
+            musicToggle = document.getElementById('musicToggle');
+            bgMusic = document.getElementById('bgMusic');
+
+            bgMusic.volume = 0.4;
+
+            const savedMusicPref = localStorage.getItem('playMusic');
+            if (savedMusicPref === 'true') {  
+                musicToggle.checked = true;
+                setTimeout(() => {
+                    playMusic();
+                }, 100);
+            }
+
+            modalBtn.addEventListener('click', () => {
+                modal.style.display = 'flex';
+            });
+
+            closeBtn.addEventListener('click', () => {
+                saveMusicPref();
+                modal.style.display = 'none';
+            });
+
+            modal.addEventListener('click', (e) => {
+                if (e.target === modal) {
+                    saveMusicPref();
+                    modal.style.display = 'none';
+                }
+            });
+
+            musicToggle.addEventListener('change', () => {
+                if (musicToggle.checked) {
+                    playMusic();
+                } else {
+                    pauseMusic();
+                }
+                localStorage.setItem('playMusic', musicToggle.checked);
+            });
+        });
+
+        document.addEventListener('visibilitychange', function() {
+            if (!document.hidden && localStorage.getItem('playMusic') === 'true') {
+                setTimeout(() => {
+                    playMusic();
+                }, 100);
+            }
+        });
+
+        const container = document.getElementById('twistContainer');
+        container.addEventListener('click', () => {
+            container.classList.toggle('active');
+        });
+
+        document.addEventListener('touchmove', function(e) {
+            e.preventDefault();
+        }, { passive: false });
+
+        document.addEventListener('wheel', function(e) {
+            e.preventDefault();
+        }, { passive: false });
+
+        document.addEventListener('selectstart', function(e) {
+            e.preventDefault();
+        });
+
+
+    </script>
+</body>
+</html>
