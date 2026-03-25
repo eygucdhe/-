@@ -341,12 +341,7 @@ input[type="checkbox"]:focus {
     border: none;
 }
 
-/* 移除特定输入框的 !important 覆盖 */
-#fontSize, #particleDensity {
-    font-size: var(--input-font-size);
-    padding: var(--input-padding);
-    height: auto;
-}
+
 
 
 
@@ -372,15 +367,6 @@ input, select {
     font-size: var(--input-font-size);
     transition: border 0.3s, box-shadow 0.3s;
     color: var(--text-color);
-}
-
-/* 统一输入框样式 */
-#fontSize, #particleDensity {
-    font-size: var(--input-font-size);
-    padding: var(--input-padding);
-    height: auto;
-    border: 3px solid var(--border-color);
-    border-radius: var(--input-border-radius);
 }
 
 input:focus, select:focus {
@@ -1015,14 +1001,6 @@ button.remove-file-btn:hover {
 }
 
 /* 指令挑战页面样式 */
-/* 特别放大的输入框样式 */
-#fontSize, #particleDensity {
-    font-size: 2rem !important;
-    padding: 1.8rem !important;
-    height: 90px !important;
-    border: 3px solid #63b8ff !important;
-    border-radius: 20px !important;
-}
 
 /* MC指令挑战专用样式 */
 .progress-container {
@@ -1336,13 +1314,6 @@ button.remove-file-btn:hover {
         font-size: 14px;
         padding: 0.6rem;
         border-radius: 10px;
-        height: 44px;
-        min-height: 44px;
-    }
-    
-    textarea {
-        height: auto;
-        min-height: 100px;
     }
 
     /* 模态框手机端适配 */
