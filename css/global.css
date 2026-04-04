@@ -452,7 +452,7 @@ input:focus, select:focus {
     align-items: center;
     margin: var(--control-margin);
     width: 100%;
-    max-width: 600px; /* 限制最大宽度 */
+    max-width: var(--card-max-width); /* 与卡片宽度保持一致 */
     margin-left: auto;
     margin-right: auto;
 }
@@ -463,6 +463,10 @@ input:focus, select:focus {
     border-radius: 15px;
     box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
     background-color: white;
+    max-height: 500px; /* 限制最大高度 */
+    width: 100%;
+    height: auto;
+    object-fit: contain;
 }
 /* 添加canvas响应式样式 */
 #textCanvas {
