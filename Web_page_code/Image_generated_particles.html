@@ -29,13 +29,13 @@
         <div class="input-group">
             <label>
                 图片尺寸（正方形像素）：
-                <input type="number" id="sizeInput" class="form-control" value="100" min="10" max="500">
+                <input type="number" id="sizeInput" class="form-control" value="100" max="500">
             </label>
         </div>
         <div class="input-group">
             <label>
                 粒子密度：
-                <input type="number" id="densityInput" class="form-control" value="5" min="1" max="99" step="1" placeholder="数值越小越密集">
+                <input type="number" id="densityInput" class="form-control" value="5" min="0.1" max="99" step="0.1" placeholder="数值越小越密集">
             </label>
         </div>
         
@@ -154,17 +154,33 @@
                 this.browseButton.addEventListener('click', () => this.imageInput.click());
                 this.imageInput.addEventListener('change', () => this.handleImageChange());
                 this.sizeInput.addEventListener('input', () => {
-                    let val = parseInt(this.sizeInput.value);
-                    if (val > 500) this.sizeInput.value = 500;
-                    if (val < 10) this.sizeInput.value = 10;
+                    if (this.originalImage) {
+                        this.renderImagePreview(this.originalImage);
+                    }
+                });
+                this.sizeInput.addEventListener('blur', () => {
+                    if (this.sizeInput.value === '') {
+                        this.sizeInput.value = 100;
+                    } else {
+                        let val = parseInt(this.sizeInput.value);
+                        if (val > 500) this.sizeInput.value = 500;
+                        if (val < 1) this.sizeInput.value = 1;
+                    }
                     if (this.originalImage) {
                         this.renderImagePreview(this.originalImage);
                     }
                 });
                 this.densityInput.addEventListener('input', () => {
-                    let val = parseInt(this.densityInput.value);
-                    if (val > 99) this.densityInput.value = 99;
-                    if (val < 1) this.densityInput.value = 1;
+                    this.updateFileCount();
+                });
+                this.densityInput.addEventListener('blur', () => {
+                    if (this.densityInput.value === '') {
+                        this.densityInput.value = 5;
+                    } else {
+                        let val = parseFloat(this.densityInput.value);
+                        if (val > 99) this.densityInput.value = 99;
+                        if (val < 0.1) this.densityInput.value = 0.1;
+                    }
                     this.updateFileCount();
                 });
                 document.addEventListener('selectstart', (e) => e.preventDefault());
