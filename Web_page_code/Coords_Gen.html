@@ -7,7 +7,10 @@
     <title>南风工具箱</title>
     <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/file-saver@2.0.5/dist/FileSaver.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/streamsaver@2.0.6/StreamSaver.min.js"></script>
     <link rel="stylesheet" href="../css/global.css">
+    <style>
+    </style>
     <script src="../js/particles.js"></script>
     <script src="../js/baidu_statistics.js"></script>
 </head>
@@ -29,8 +32,8 @@
                 <input type="text" id="circleCenter" placeholder="例: 76 -51 0" aria-describedby="circleCenterHelp">
             </div>
             <div class="input-group">
-                <label for="circleRadius">圆的半径（1-1000）</label>
-                <input type="number" id="circleRadius" value="1" min="1" max="1000">
+                <label for="circleRadius">圆的半径（1-600）</label>
+                <input type="number" id="circleRadius" value="1" min="1" max="600">
             </div>
             <div class="input-group">
                 <label for="circleTarget">复制目标坐标（格式：x y z）</label>
@@ -133,6 +136,8 @@
         <div class="mode-desc" id="modeDesc" aria-live="polite">
             当前模式：圆形模式（生成圆形区域点，距离圆心越远分数越高）
         </div>
+
+
     </div>
 
     <script>
@@ -148,6 +153,10 @@
                 this.currentMode = 0;
                 this.MAX_COMMANDS = 10000;
                 this.isGenerating = false;
+                this.BATCH_SIZE = 100000; // 每批处理的命令数
+                this.BATCH_DELAY = 0; // 每批处理后的延迟(ms)
+                this.MAX_COMMANDS_PER_FILE = 10000; // 每个.mcfunction文件最大命令数（1万条，约1MB）
+                this.MAX_FILES_PER_ZIP = 80; // 每个ZIP文件最多包含80个.mcfunction文件（约80万条，约80MB）
 
                 // DOM元素
                 this.elements = {
@@ -211,6 +220,27 @@
                 Object.values(this.elements.inputs).forEach(input => {
                     input.addEventListener('input', this.debounce(() => this.updateCount(), 300));
                     input.addEventListener('change', () => this.updateCount());
+                });
+
+                // 圆形半径输入限制（最多3位数字）
+                this.elements.inputs.circleRadius.addEventListener('input', (e) => {
+                    const value = e.target.value;
+                    // 限制最多3位数字
+                    if (value.length > 3) {
+                        e.target.value = value.slice(0, 3);
+                    }
+                });
+
+                // 起始分数输入限制（最多4位数字，最高1000）
+                const scoreInputs = ['circleScore', 'squareScore', 'diffuseScore', 'sliceScore'];
+                scoreInputs.forEach(id => {
+                    this.elements.inputs[id].addEventListener('input', (e) => {
+                        const value = e.target.value;
+                        // 限制最多4位数字
+                        if (value.length > 4) {
+                            e.target.value = value.slice(0, 4);
+                        }
+                    });
                 });
             }
 
@@ -290,7 +320,7 @@
                 return this.validateCoord(circleCenter.value) && 
                        this.validateCoord(circleTarget.value) && 
                        !isNaN(parseInt(circleRadius.value)) && 
-                       circleRadius.value >= 1 && circleRadius.value <= 1000 &&
+                       circleRadius.value >= 1 && circleRadius.value <= 600 &&
                        !isNaN(parseInt(circleScore.value)) && circleScore.value >= 1;
             }
 
@@ -356,7 +386,7 @@
             // 生成指令
             async generateCommands() {
                 if (this.isGenerating) return;
-            
+
                 this.isGenerating = true;
                 this.updateGenerateButton(true);
                 const mode = this.modes[this.currentMode];
@@ -377,8 +407,10 @@
                             result = await this.generateSlice(mode);
                             break;
                     }
+                    if (result) alert(result);
                 } catch (err) {
                     console.error('生成失败:', err);
+                    alert('生成失败: ' + err.message);
                 } finally {
                     this.isGenerating = false;
                     this.updateGenerateButton(false);
@@ -396,7 +428,12 @@
                 }
             }
 
-            // 圆形模式生成（第418行附近）
+            // 延迟函数
+            delay(ms) {
+                return new Promise(resolve => setTimeout(resolve, ms));
+            }
+
+            // 圆形模式生成（流式写入）
             async generateCircle(mode) {
                 const center = this.parseCoord(this.elements.inputs.circleCenter.value);
                 const radius = parseInt(this.elements.inputs.circleRadius.value);
@@ -404,34 +441,32 @@
                 const scoreStart = parseInt(this.elements.inputs.circleScore.value);
                 const [cx, cy, cz] = center;
                 const [tx, ty, tz] = target;
-                const commands = ['scoreboard objectives add 分数 dummy "分数"'];
-
-                // 优化的球体生成算法
-                for (let x = -radius; x <= radius; x++) {
-                    for (let y = -radius; y <= radius; y++) {
-                        const x2y2 = x*x + y*y;
-                        if (x2y2 > radius*radius) continue;
-                        const maxZ = Math.floor(Math.sqrt(radius*radius - x2y2));
-                        for (let z = -maxZ; z <= maxZ; z++) {
-                            const realX = cx + x;
-                            const realY = cy + y;
-                            const realZ = cz + z;
-                            const dist = Math.sqrt(x*x + y*y + z*z);
-                            const score = Math.max(1, Math.round(scoreStart + dist));
-                            commands.push(`execute @a[scores={分数=${score}}] ~ ~ ~ clone ${realX} ${realY} ${realZ} ${realX} ${realY} ${realZ} ${tx + x} ${ty + y} ${tz + z} replace normal`);
+                
+                // 流式生成并打包
+                const generator = async function*() {
+                    yield 'scoreboard objectives add 分数 dummy "分数"';
+                    
+                    for (let x = -radius; x <= radius; x++) {
+                        for (let y = -radius; y <= radius; y++) {
+                            const x2y2 = x*x + y*y;
+                            if (x2y2 > radius*radius) continue;
+                            const maxZ = Math.floor(Math.sqrt(radius*radius - x2y2));
+                            for (let z = -maxZ; z <= maxZ; z++) {
+                                const realX = cx + x;
+                                const realY = cy + y;
+                                const realZ = cz + z;
+                                const dist = Math.sqrt(x*x + y*y + z*z);
+                                const score = Math.max(1, Math.round(scoreStart + dist));
+                                yield `execute @a[scores={分数=${score}}] ~ ~ ~ clone ${realX} ${realY} ${realZ} ${realX} ${realY} ${realZ} ${tx + x} ${ty + y} ${tz + z} replace normal`;
+                            }
                         }
                     }
-                }
+                };
 
-                // 防止过多命令导致浏览器崩溃
-                if (commands.length >= this.MAX_COMMANDS * 2) {
-                    throw new Error(`生成的命令数量超过限制（${this.MAX_COMMANDS}条），请减小区域范围`);
-                }
-
-                return this.packageCommands(commands, mode.id);
+                return this.streamPackageCommands(generator(), mode.id);
             }
 
-            // 方形模式生成（第449行附近）
+            // 方形模式生成（流式写入）
             async generateSquare(mode) {
                 const start = this.parseCoord(this.elements.inputs.squareStart.value);
                 const end = this.parseCoord(this.elements.inputs.squareEnd.value);
@@ -475,26 +510,28 @@
                         startX = minX; startY = minY; startZ = minZ;
                         break;
                     default:
-                        startX = maxX; startY = maxY; startZ = maxZ; // 默认东南上角
+                        startX = maxX; startY = maxY; startZ = maxZ;
                 }
                 
-                const commands = ['scoreboard objectives add 分数 dummy 分数'];
-                
-                for (let x = minX; x <= maxX; x++) {
-                    for (let y = minY; y <= maxY; y++) {
-                        for (let z = minZ; z <= maxZ; z++) {
-                            // 计算到起始角的曼哈顿距离作为分数
-                            const offset = Math.abs(x - startX) + Math.abs(y - startY) + Math.abs(z - startZ);
-                            const score = scoreStart + offset;
-                            commands.push(`execute @a[scores={分数=${score}}] ~ ~ ~ clone ${x} ${y} ${z} ${x} ${y} ${z} ${tx + (x - minX)} ${ty + (y - minY)} ${tz + (z - minZ)} replace normal`);
+                // 流式生成并打包
+                const generator = async function*() {
+                    yield 'scoreboard objectives add 分数 dummy 分数';
+                    
+                    for (let x = minX; x <= maxX; x++) {
+                        for (let y = minY; y <= maxY; y++) {
+                            for (let z = minZ; z <= maxZ; z++) {
+                                const offset = Math.abs(x - startX) + Math.abs(y - startY) + Math.abs(z - startZ);
+                                const score = scoreStart + offset;
+                                yield `execute @a[scores={分数=${score}}] ~ ~ ~ clone ${x} ${y} ${z} ${x} ${y} ${z} ${tx + (x - minX)} ${ty + (y - minY)} ${tz + (z - minZ)} replace normal`;
+                            }
                         }
                     }
-                }
+                };
 
-                return this.packageCommands(commands, mode.id);
+                return this.streamPackageCommands(generator(), mode.id);
             }
 
-            // 扩散模式生成（第489行附近）
+            // 扩散模式生成（流式写入）
             async generateDiffuse(mode) {
                 const cube1 = this.parseCoord(this.elements.inputs.diffuseCube1.value);
                 const cube2 = this.parseCoord(this.elements.inputs.diffuseCube2.value);
@@ -505,35 +542,36 @@
                 const [x2, y2, z2] = cube2;
                 const [tx, ty, tz] = target;
                 
-                // 计算立方体边界
                 const minX = Math.min(x1, x2), maxX = Math.max(x1, x2);
                 const minY = Math.min(y1, y2), maxY = Math.max(y1, y2);
                 const minZ = Math.min(z1, z2), maxZ = Math.max(z1, z2);
-                const sizeX = maxX - minX + 1;
-                const sizeY = maxY - minY + 1;
-                const sizeZ = maxZ - minZ + 1;
                 const centerX = Math.floor((minX + maxX) / 2);
                 const centerY = Math.floor((minY + maxY) / 2);
                 const centerZ = Math.floor((minZ + maxZ) / 2);
                 
-                const commands = ['scoreboard objectives add 分数 dummy "分数"'];
-                const points = [];
+                // 扩散模式需要先收集所有点到内存
+                const pointCount = (maxX - minX + 1) * (maxY - minY + 1) * (maxZ - minZ + 1);
+                if (pointCount > 5000000) { // 500万以上直接拒绝
+                    throw new Error('扩散模式需要先收集所有点到内存，请减小区域范围（建议不超过500万个点）');
+                }
+                if (pointCount > 1000000) { // 100万-500万警告
+                    const confirmed = confirm(`扩散模式需要先收集 ${pointCount.toLocaleString()} 个点到内存，可能导致浏览器变慢！\n\n是否继续？`);
+                    if (!confirmed) throw new Error('用户取消');
+                }
                 
-                // 生成所有点并计算距离
+                // 先收集所有点（扩散模式需要排序）
+                const points = [];
                 for (let x = minX; x <= maxX; x++) {
                     for (let y = minY; y <= maxY; y++) {
                         for (let z = minZ; z <= maxZ; z++) {
-                            // 计算到边界中心的距离（而非立方体中心）
                             const edgeCenterX = x < centerX ? minX : maxX;
                             const edgeCenterY = y < centerY ? minY : maxY;
                             const edgeCenterZ = z < centerZ ? minZ : maxZ;
                             
                             let distance;
                             if (distType === 'manhattan') {
-                                // 曼哈顿距离（沿轴步数）
                                 distance = Math.abs(x - edgeCenterX) + Math.abs(y - edgeCenterY) + Math.abs(z - edgeCenterZ);
                             } else {
-                                // 欧氏距离（直线距离）
                                 distance = Math.sqrt(
                                     Math.pow(x - edgeCenterX, 2) + 
                                     Math.pow(y - edgeCenterY, 2) + 
@@ -546,7 +584,7 @@
                     }
                 }
                 
-                // 按距离排序并分配分数
+                // 按距离排序
                 points.sort((a, b) => a.distance - b.distance);
                 const uniqueDistances = [...new Set(points.map(p => p.distance))].sort((a, b) => a - b);
                 const distanceScores = new Map();
@@ -554,19 +592,23 @@
                     distanceScores.set(dist, scoreStart + index);
                 });
                 
-                // 生成命令
-                points.forEach(point => {
-                    const score = distanceScores.get(point.distance);
-                    const dx = point.x - minX;
-                    const dy = point.y - minY;
-                    const dz = point.z - minZ;
-                    commands.push(`execute @a[scores={分数=${score}}] ~ ~ ~ clone ${point.x} ${point.y} ${point.z} ${point.x} ${point.y} ${point.z} ${tx + dx} ${ty + dy} ${tz + dz} replace normal`);
-                });
+                // 流式生成并打包
+                const generator = async function*() {
+                    yield 'scoreboard objectives add 分数 dummy "分数"';
+                    
+                    for (const point of points) {
+                        const score = distanceScores.get(point.distance);
+                        const dx = point.x - minX;
+                        const dy = point.y - minY;
+                        const dz = point.z - minZ;
+                        yield `execute @a[scores={分数=${score}}] ~ ~ ~ clone ${point.x} ${point.y} ${point.z} ${point.x} ${point.y} ${point.z} ${tx + dx} ${ty + dy} ${tz + dz} replace normal`;
+                    }
+                };
                 
-                return this.packageCommands(commands, mode.id);
+                return this.streamPackageCommands(generator(), mode.id);
             }
 
-            // 切片模式生成（第539行附近）
+            // 切片模式生成（流式写入）
             async generateSlice(mode) {
                 const cube1 = this.parseCoord(this.elements.inputs.sliceCube1.value);
                 const cube2 = this.parseCoord(this.elements.inputs.sliceCube2.value);
@@ -582,58 +624,108 @@
                 const minY = Math.min(y1, y2), maxY = Math.max(y1, y2);
                 const minZ = Math.min(z1, z2), maxZ = Math.max(z1, z2);
                 
-                const commands = ['scoreboard objectives add 分数 dummy "分数"'];
-                
-                if (axis === 'x') {
-                    for (let x = minX; x <= maxX; x++) {
-                        const score = scoreStart + (x - minX);
-                        for (let y = minY; y <= maxY; y++) {
-                            for (let z = minZ; z <= maxZ; z++) {
-                                commands.push(`execute @a[scores={分数=${score}}] ~ ~ ~ clone ${x} ${y} ${z} ${x} ${y} ${z} ${tx + (x - minX)} ${ty + (y - minY)} ${tz + (z - minZ)} replace normal`);
-                            }
-                        }
-                    }
-                } else if (axis === 'y') {
-                    for (let y = minY; y <= maxY; y++) {
-                        const score = scoreStart + (y - minY);
+                // 流式生成并打包
+                const generator = async function*() {
+                    yield 'scoreboard objectives add 分数 dummy "分数"';
+                    
+                    if (axis === 'x') {
                         for (let x = minX; x <= maxX; x++) {
-                            for (let z = minZ; z <= maxZ; z++) {
-                                commands.push(`execute @a[scores={分数=${score}}] ~ ~ ~ clone ${x} ${y} ${z} ${x} ${y} ${z} ${tx + (x - minX)} ${ty + (y - minY)} ${tz + (z - minZ)} replace normal`);
-                            }
-                        }
-                    }
-                } else {
-                    for (let z = minZ; z <= maxZ; z++) {
-                        const score = scoreStart + (z - minZ);
-                        for (let x = minX; x <= maxX; x++) {
+                            const score = scoreStart + (x - minX);
                             for (let y = minY; y <= maxY; y++) {
-                                commands.push(`execute @a[scores={分数=${score}}] ~ ~ ~ clone ${x} ${y} ${z} ${x} ${y} ${z} ${tx + (x - minX)} ${ty + (y - minY)} ${tz + (z - minZ)} replace normal`);
+                                for (let z = minZ; z <= maxZ; z++) {
+                                    yield `execute @a[scores={分数=${score}}] ~ ~ ~ clone ${x} ${y} ${z} ${x} ${y} ${z} ${tx + (x - minX)} ${ty + (y - minY)} ${tz + (z - minZ)} replace normal`;
+                                }
+                            }
+                        }
+                    } else if (axis === 'y') {
+                        for (let y = minY; y <= maxY; y++) {
+                            const score = scoreStart + (y - minY);
+                            for (let x = minX; x <= maxX; x++) {
+                                for (let z = minZ; z <= maxZ; z++) {
+                                    yield `execute @a[scores={分数=${score}}] ~ ~ ~ clone ${x} ${y} ${z} ${x} ${y} ${z} ${tx + (x - minX)} ${ty + (y - minY)} ${tz + (z - minZ)} replace normal`;
+                                }
+                            }
+                        }
+                    } else {
+                        for (let z = minZ; z <= maxZ; z++) {
+                            const score = scoreStart + (z - minZ);
+                            for (let x = minX; x <= maxX; x++) {
+                                for (let y = minY; y <= maxY; y++) {
+                                    yield `execute @a[scores={分数=${score}}] ~ ~ ~ clone ${x} ${y} ${z} ${x} ${y} ${z} ${tx + (x - minX)} ${ty + (y - minY)} ${tz + (z - minZ)} replace normal`;
+                                }
                             }
                         }
                     }
-                }
+                };
 
-                return this.packageCommands(commands, mode.id);
+                return this.streamPackageCommands(generator(), mode.id);
             }
 
-            // 打包命令为ZIP文件
-            async packageCommands(commands, modeName) {
-                const zip = new JSZip();
-                const fileCount = Math.ceil(commands.length / this.MAX_COMMANDS);
+            // 流式打包命令为ZIP文件（支持超大命令量，分批下载）
+            async streamPackageCommands(generator, modeName) {
+                let zip = new JSZip();
+                let currentFileCommands = [];
+                let fileIndex = 1;
+                let zipIndex = 1;
+                let totalCommands = 0;
+                let filesInCurrentZip = 0;
+                let commandsInCurrentFile = 0;
                 
-                for (let i = 0; i < fileCount; i++) {
-                    const start = i * this.MAX_COMMANDS;
-                    const end = Math.min((i + 1) * this.MAX_COMMANDS, commands.length);
-                    const fileCommands = commands.slice(start, end);
+                for await (const command of generator) {
+                    currentFileCommands.push(command);
+                    totalCommands++;
+                    commandsInCurrentFile++;
                     
-                    const fileName = `coords_${modeName}_${i + 1}.mcfunction`;
-                    zip.file(fileName, fileCommands.join('\n'));
+                    // 当当前文件达到最大命令数时，创建新文件
+                    if (commandsInCurrentFile >= this.MAX_COMMANDS_PER_FILE) {
+                        const fileName = `coords_${modeName}_${fileIndex}.mcfunction`;
+                        zip.file(fileName, currentFileCommands.join('\n'));
+                        currentFileCommands = [];
+                        commandsInCurrentFile = 0;
+                        fileIndex++;
+                        filesInCurrentZip++;
+                        
+                        // 当达到每个ZIP的最大文件数时，保存并创建新ZIP
+                        if (filesInCurrentZip >= this.MAX_FILES_PER_ZIP) {
+                            console.log(`正在下载第 ${zipIndex} 个ZIP文件...`);
+                            const blob = await zip.generateAsync({type: 'blob'});
+                            saveAs(blob, `coords_${modeName}_part${zipIndex}_${new Date().getTime()}.zip`);
+                            
+                            // 创建新的ZIP对象，释放内存
+                            zip = new JSZip();
+                            filesInCurrentZip = 0;
+                            zipIndex++;
+                            
+                            // 让出控制权，避免阻塞
+                            await this.delay(500);
+                        }
+                        
+                        // 每处理一批让出控制权
+                        if (totalCommands % 10000 === 0) {
+                            await this.delay(0);
+                        }
+                        
+                        // 每1000个文件显示一次进度
+                        if (fileIndex % 1000 === 0) {
+                            console.log(`已生成 ${fileIndex} 个文件，${totalCommands.toLocaleString()} 条命令...`);
+                        }
+                    }
                 }
                 
-                const blob = await zip.generateAsync({type: 'blob'});
-                saveAs(blob, `coords_${modeName}_${new Date().getTime()}.zip`);
+                // 处理剩余命令
+                if (currentFileCommands.length > 0) {
+                    const fileName = `coords_${modeName}_${fileIndex}.mcfunction`;
+                    zip.file(fileName, currentFileCommands.join('\n'));
+                }
                 
-                return `成功生成 ${fileCount} 个文件，共 ${commands.length} 条命令`;
+                // 保存最后一个ZIP（如果有内容）
+                if (Object.keys(zip.files).length > 0) {
+                    console.log(`正在下载第 ${zipIndex} 个ZIP文件...`);
+                    const blob = await zip.generateAsync({type: 'blob'});
+                    saveAs(blob, `coords_${modeName}_part${zipIndex}_${new Date().getTime()}.zip`);
+                }
+                
+                return `成功生成 ${zipIndex} 个ZIP文件，共 ${fileIndex} 个.mcfunction文件，${totalCommands.toLocaleString()} 条命令`;
             }
         }
 
