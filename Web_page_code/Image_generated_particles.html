@@ -18,7 +18,7 @@
         <h1>FUNCTION 图片粒子生成工具</h1>
         
         <div class="button-container">
-            <button id="directionButton" class="btn">切换为平面模式</button>
+            <button id="directionButton" class="btn">切换为垂直模式</button>
             <button id="generateButton" class="btn" disabled>生成指令下载</button>
             <span id="fileCountHint" class="hint" aria-live="polite">0 个文件</span>
         </div>
@@ -35,7 +35,7 @@
         <div class="input-group">
             <label>
                 粒子密度：
-                <input type="number" id="densityInput" class="form-control" value="5" min="1" max="20" step="0.1" placeholder="数值越小越密集">
+                <input type="number" id="densityInput" class="form-control" value="5" min="1" max="99" step="1" placeholder="数值越小越密集">
             </label>
         </div>
         
@@ -149,30 +149,31 @@
 
             // 设置事件监听器
             setupEventListeners() {
-                // 方向切换按钮
                 this.directionButton.addEventListener('click', () => this.toggleDirection());
-                // 生成按钮
                 this.generateButton.addEventListener('click', () => this.generateParticles());
-                // 浏览按钮
                 this.browseButton.addEventListener('click', () => this.imageInput.click());
-                // 图片选择变化
                 this.imageInput.addEventListener('change', () => this.handleImageChange());
-                // 尺寸输入变化
                 this.sizeInput.addEventListener('input', () => {
+                    let val = parseInt(this.sizeInput.value);
+                    if (val > 500) this.sizeInput.value = 500;
+                    if (val < 10) this.sizeInput.value = 10;
                     if (this.originalImage) {
                         this.renderImagePreview(this.originalImage);
                     }
                 });
-                // 密度输入变化
-                this.densityInput.addEventListener('input', () => this.updateFileCount());
-                // 阻止文本选择
+                this.densityInput.addEventListener('input', () => {
+                    let val = parseInt(this.densityInput.value);
+                    if (val > 99) this.densityInput.value = 99;
+                    if (val < 1) this.densityInput.value = 1;
+                    this.updateFileCount();
+                });
                 document.addEventListener('selectstart', (e) => e.preventDefault());
             }
 
             // 切换方向模式
             toggleDirection() {
-                this.isXZMode =!this.isXZMode;
-                this.directionButton.textContent = this.isXZMode? '切换为XZ模式' : '切换为XY模式';
+                this.isXZMode = !this.isXZMode;
+                this.directionButton.textContent = this.isXZMode ? '切换为平面模式' : '切换为垂直模式';
                 this.updatePreview();
             }
 
