@@ -120,23 +120,45 @@
                 this.initialize();
             }
 
-            // 初始化正方形画布
+            // 初始化画布
             initCanvas() {
-                // 设置画布尺寸为正方形
-                const containerWidth = this.canvasContainer.clientWidth;
-                this.previewCanvas.width = containerWidth;
-                this.previewCanvas.height = containerWidth;
+                // 初始设置画布尺寸
+                this.updateCanvasSize();
                 
                 // 窗口大小变化时重新设置画布尺寸
                 window.addEventListener('resize', () => {
-                    const newWidth = this.canvasContainer.clientWidth;
-                    this.previewCanvas.width = newWidth;
-                    this.previewCanvas.height = newWidth;
-                    // 重新绘制图片保持正方形显示
+                    this.updateCanvasSize();
+                    // 重新绘制图片
                     if (this.originalImage) {
                         this.renderImagePreview(this.originalImage);
                     }
                 });
+            }
+
+            // 根据图片比例更新画布尺寸
+            updateCanvasSize() {
+                const containerWidth = this.canvasContainer.clientWidth;
+                const maxHeight = 500; // 最大高度限制
+                
+                if (this.originalImage) {
+                    // 根据图片宽高比计算画布尺寸
+                    const imgRatio = this.originalImage.width / this.originalImage.height;
+                    let canvasWidth = containerWidth;
+                    let canvasHeight = canvasWidth / imgRatio;
+                    
+                    // 如果计算出的高度超过最大高度，则按高度限制计算
+                    if (canvasHeight > maxHeight) {
+                        canvasHeight = maxHeight;
+                        canvasWidth = canvasHeight * imgRatio;
+                    }
+                    
+                    this.previewCanvas.width = canvasWidth;
+                    this.previewCanvas.height = canvasHeight;
+                } else {
+                    // 没有图片时，默认使用正方形
+                    this.previewCanvas.width = containerWidth;
+                    this.previewCanvas.height = Math.min(containerWidth, maxHeight);
+                }
             }
 
             // 初始化应用
@@ -159,29 +181,25 @@
                     }
                 });
                 this.sizeInput.addEventListener('blur', () => {
-                    if (this.sizeInput.value === '') {
-                        this.sizeInput.value = 100;
-                    } else {
+                    if (this.sizeInput.value !== '') {
                         let val = parseInt(this.sizeInput.value);
                         if (val > 500) this.sizeInput.value = 500;
                         if (val < 1) this.sizeInput.value = 1;
-                    }
-                    if (this.originalImage) {
-                        this.renderImagePreview(this.originalImage);
+                        if (this.originalImage) {
+                            this.renderImagePreview(this.originalImage);
+                        }
                     }
                 });
                 this.densityInput.addEventListener('input', () => {
                     this.updateFileCount();
                 });
                 this.densityInput.addEventListener('blur', () => {
-                    if (this.densityInput.value === '') {
-                        this.densityInput.value = 5;
-                    } else {
+                    if (this.densityInput.value !== '') {
                         let val = parseFloat(this.densityInput.value);
                         if (val > 99) this.densityInput.value = 99;
                         if (val < 0.1) this.densityInput.value = 0.1;
+                        this.updateFileCount();
                     }
-                    this.updateFileCount();
                 });
                 document.addEventListener('selectstart', (e) => e.preventDefault());
             }
@@ -211,6 +229,7 @@
                 const img = new Image();
                 img.onload = () => {
                     this.originalImage = img; // 保存原始图片引用
+                    this.updateCanvasSize(); // 根据图片比例更新画布尺寸
                     this.renderImagePreview(img);
                     // 添加更新按钮状态的代码
                     this.updateButtonState();
@@ -218,24 +237,24 @@
                 img.src = imageUrl;
             }
 
-            // 渲染图片预览 - 仅调整为正方形，保持其他元素不变
+            // 渲染图片预览 - 根据图片比例自适应
             renderImagePreview(img) {
-                // 确保画布是正方形
-                const canvasSize = this.previewCanvas.width;
+                const canvasWidth = this.previewCanvas.width;
+                const canvasHeight = this.previewCanvas.height;
                 const targetSize = parseInt(this.sizeInput.value) || 100;
                 
                 // 清除画布（保持白色背景）
                 this.ctx.fillStyle = 'white';
-                this.ctx.fillRect(0, 0, canvasSize, canvasSize);
+                this.ctx.fillRect(0, 0, canvasWidth, canvasHeight);
                 
                 // 计算缩放比例，保持图片原始比例
-                const ratio = Math.min(canvasSize / img.width, canvasSize / img.height);
+                const ratio = Math.min(canvasWidth / img.width, canvasHeight / img.height);
                 const scaledWidth = img.width * ratio;
                 const scaledHeight = img.height * ratio;
 
                 // 计算居中位置
-                const x = (canvasSize - scaledWidth) / 2;
-                const y = (canvasSize - scaledHeight) / 2;
+                const x = (canvasWidth - scaledWidth) / 2;
+                const y = (canvasHeight - scaledHeight) / 2;
 
                 // 绘制图片（居中显示，不拉伸，保持原始颜色和细节）
                 this.ctx.drawImage(img, x, y, scaledWidth, scaledHeight);
@@ -273,11 +292,16 @@
 
             // 清除预览
             clearPreview() {
-                const canvasSize = this.previewCanvas.width;
+                const canvasWidth = this.previewCanvas.width;
+                const canvasHeight = this.previewCanvas.height;
                 this.ctx.fillStyle = 'white';
-                this.ctx.fillRect(0, 0, canvasSize, canvasSize);
+                this.ctx.fillRect(0, 0, canvasWidth, canvasHeight);
                 this.tempImageData = null;
                 this.originalImage = null;
+                // 重置画布为默认正方形
+                const containerWidth = this.canvasContainer.clientWidth;
+                this.previewCanvas.width = containerWidth;
+                this.previewCanvas.height = Math.min(containerWidth, 500);
                 // 这里已经正确使用了this.fileCountHint
                 this.fileCountHint.textContent = "0 文件";
                 this.generateButton.disabled = true;
