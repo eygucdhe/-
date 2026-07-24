@@ -5,37 +5,38 @@
     box-sizing: border-box;
     font-family: 宋体, SimSun, sans-serif;
     font-size: 16px;
-    color: black;
+    color: var(--text-color);
     -webkit-tap-highlight-color: transparent;
     -webkit-touch-callout: none;
 }
 
-/* 根变量定义 - 手机版默认值 */
+/* 根变量定义 - 暗黑风格 */
 :root {
-    --primary-color: #87ceeb;
-    --primary-dark: #63b8ff;
-    --secondary-color: #007bff;
-    --background-color: #e0f4ff;
-    --card-background: white;
-    --text-color: black;
-    --label-color: black;
+    --primary-color: #4CAF50;
+    --primary-dark: #388E3C;
+    --secondary-color: #FFD700;
+    --background-color: #1a1a2e;
+    --background-gradient: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+    --card-background: linear-gradient(180deg, #2d2d2d 0%, #1a1a1a 100%);
+    --text-color: #e0e0e0;
+    --label-color: #b0b0b0;
     --hint-background: var(--primary-color);
-    --border-color: var(--primary-color);
-    --border-focus: var(--primary-dark);
-    --panel-background: #f0f8ff;
-    --shadow-color: rgba(135, 206, 235, 0.3);
-    --modal-overlay: rgba(0, 0, 0, 0.4);
-    --disabled-color: #ccc;
+    --border-color: #4a4a4a;
+    --border-focus: #4CAF50;
+    --panel-background: rgba(255,255,255,0.05);
+    --shadow-color: rgba(0,0,0,0.5);
+    --modal-overlay: rgba(0, 0, 0, 0.7);
+    --disabled-color: #555;
 
     /* 基础尺寸变量 */
-    --card-padding: 2rem;
+    --card-padding: 3rem;
     --card-max-width: 800px;
-    --card-margin: 2rem auto;
+    --card-margin: 3rem auto;
     --heading-size: 2rem;
     --heading-margin-bottom: 1.5rem;
-    --button-padding: 0.5rem 1rem;
-    --button-font-size: 1.1rem;
-    --button-height: auto;
+    --button-padding: 0.8rem 1.5rem;
+    --button-font-size: 1.2rem;
+    --button-height: 55px;
     --button-margin: 0.5rem;
     --control-gap: 1rem;
     --control-margin: 1.5rem 0;
@@ -44,7 +45,7 @@
     --label-margin-bottom: 0.75rem;
     --input-padding: 0.8rem;
     --input-font-size: 1rem;
-    --input-border-radius: 15px;
+    --input-border-radius: 8px;
     --desc-font-size: 1rem;
     --desc-padding: 0.8rem;
     --desc-margin: 1rem 0;
@@ -55,6 +56,12 @@
     --note-margin: 1rem 0;
     --modal-padding: 20px;
     --modal-max-width: 500px;
+}
+
+/* Minecraft 字体 */
+@font-face {
+    font-family: 'Minecraft';
+    src: url('https://fonts.cdnfonts.com/s/17947/Minecraft.woff') format('woff');
 }
 
 /* 电脑模式媒体查询 */
@@ -93,9 +100,23 @@
 /* 基础布局样式 */
 body {
     min-height: 100vh;
-    background: var(--background-color);
+    background: var(--background-gradient);
     padding: 0;
     color: var(--text-color);
+    font-family: 'Minecraft', 'Microsoft YaHei', sans-serif;
+}
+
+/* 背景图案 */
+body::before {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-image: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.03'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+    pointer-events: none;
+    z-index: 0;
 }
 
 /* 卡片样式 */
@@ -176,42 +197,45 @@ h1 {
 
 .modal-btn {
     padding: var(--button-padding);
-    border: none;
-    border-radius: 15px;
-    background: var(--primary-color);
+    border: 4px solid #2E7D32;
+    border-radius: 8px;
+    background: linear-gradient(180deg, #4CAF50 0%, #388E3C 100%);
     color: white;
+    font-family: 'Minecraft', 'Microsoft YaHei', sans-serif;
     font-size: var(--button-font-size);
     cursor: pointer;
-    transition: transform 0.3s, background 0.3s, box-shadow 0.3s;
+    transition: all 0.2s ease;
     min-width: 120px;
     height: var(--button-height);
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 4px 0 #1B5E20, 0 6px 20px rgba(0,0,0,0.3);
     margin: var(--button-margin);
     font-weight: bold;
+    text-shadow: 2px 2px 0 rgba(0,0,0,0.3);
 }
 
 .modal-btn:hover {
-    background: var(--primary-dark);
-    transform: translateY(-3px);
-    box-shadow: 0 6px 10px rgba(0, 0, 0, 0.15);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 0 #1B5E20, 0 8px 25px rgba(0,0,0,0.4);
+    background: linear-gradient(180deg, #5CBF60 0%, #48A048 100%);
 }
 
 .modal-btn:active {
-    transform: translateY(-1px);
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    transform: translateY(2px);
+    box-shadow: 0 2px 0 #1B5E20, 0 4px 15px rgba(0,0,0,0.3);
 }
 
 /* 基础按钮样式 - 统一所有按钮的基础样式 */
-button, .btn, .menu-btn, .more-features-menu-btn {
+button, .btn, .more-features-menu-btn {
     padding: var(--button-padding);
-    border: none;
-    border-radius: 15px;
-    background: var(--primary-color);
+    border: 4px solid #2E7D32;
+    border-radius: 8px;
+    background: linear-gradient(180deg, #4CAF50 0%, #388E3C 100%);
     cursor: pointer;
-    transition: transform 0.3s, background 0.3s, box-shadow 0.3s;
+    transition: all 0.2s ease;
+    font-family: 'Minecraft', 'Microsoft YaHei', sans-serif;
     font-size: var(--button-font-size);
     color: white;
     font-weight: bold;
@@ -221,31 +245,34 @@ button, .btn, .menu-btn, .more-features-menu-btn {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 4px 0 #1B5E20, 0 6px 20px rgba(0,0,0,0.3);
     min-width: 120px;
     text-decoration: none;
+    text-shadow: 2px 2px 0 rgba(0,0,0,0.3);
 }
 
 /* 统一按钮 hover 效果 */
-button:hover:not(:disabled), .btn:hover:not(:disabled), .menu-btn:hover:not(:disabled), .more-features-menu-btn:hover:not(:disabled) {
-    background: var(--primary-dark);
-    transform: translateY(-3px);
-    box-shadow: 0 6px 10px rgba(0, 0, 0, 0.15);
+button:hover:not(:disabled), .btn:hover:not(:disabled), .more-features-menu-btn:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 0 #1B5E20, 0 8px 25px rgba(0,0,0,0.4);
+    background: linear-gradient(180deg, #5CBF60 0%, #48A048 100%);
 }
 
 /* 统一按钮 active 效果 */
-button:active:not(:disabled), .btn:active:not(:disabled), .menu-btn:active:not(:disabled), .more-features-menu-btn:active:not(:disabled) {
-    transform: translateY(-1px);
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+button:active:not(:disabled), .btn:active:not(:disabled), .more-features-menu-btn:active:not(:disabled) {
+    transform: translateY(2px);
+    box-shadow: 0 2px 0 #1B5E20, 0 4px 15px rgba(0,0,0,0.3);
 }
 
 /* 统一按钮 disabled 效果 */
-button:disabled, .btn:disabled, .menu-btn:disabled, .more-features-menu-btn:disabled {
+button:disabled, .btn:disabled, .more-features-menu-btn:disabled {
     background: var(--disabled-color);
     cursor: not-allowed;
     transform: none;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-    color: #666;
+    box-shadow: 0 2px 0 #333, 0 4px 10px rgba(0,0,0,0.2);
+    color: #888;
+    border-color: #444;
+    text-shadow: none;
 }
 
 /* 菜单按钮特定样式 */
@@ -313,13 +340,20 @@ input, select, textarea {
     transition: border-color 0.3s, box-shadow 0.3s;
     width: 100%;
     box-sizing: border-box;
+    background: rgba(255,255,255,0.1);
+    color: var(--text-color);
 }
 
 /* 增强输入框焦点样式 */
 input:focus, select:focus, textarea:focus {
     border-color: var(--border-focus);
-    box-shadow: 0 0 0 4px rgba(99, 184, 255, 0.2);
+    box-shadow: 0 0 0 4px rgba(76, 175, 80, 0.2);
     outline: none;
+}
+
+/* 输入框 placeholder 样式 */
+input::placeholder, textarea::placeholder {
+    color: rgba(255, 255, 255, 0.5);
 }
 
 /* 修复复选框焦点样式 */
@@ -390,8 +424,9 @@ input:focus, select:focus {
 /* 提示样式 */
 .hint {
     padding: 1rem 1.2rem;
-    border-radius: 15px;
-    background: #87ceeb;
+    border-radius: 8px;
+    border: 4px solid #2E7D32;
+    background: linear-gradient(180deg, #4CAF50 0%, #388E3C 100%);
     color: white;
     font-weight: bold;
     margin: 0.5rem;
@@ -399,9 +434,18 @@ input:focus, select:focus {
     align-items: center;
     justify-content: center;
     font-size: 1rem;
+    font-family: 'Minecraft', 'Microsoft YaHei', sans-serif;
     height: 54px;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 4px 0 #1B5E20, 0 6px 20px rgba(0,0,0,0.3);
     min-width: 120px;
+    text-shadow: 2px 2px 0 rgba(0,0,0,0.3);
+    transition: all 0.2s ease;
+}
+
+.hint:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 0 #1B5E20, 0 8px 25px rgba(0,0,0,0.4);
+    background: linear-gradient(180deg, #5CBF60 0%, #48A048 100%);
 }
 
 /* 注释样式 */
@@ -452,7 +496,7 @@ input:focus, select:focus {
     align-items: center;
     margin: var(--control-margin);
     width: 100%;
-    max-width: var(--card-max-width); /* 与卡片宽度保持一致 */
+    max-width: 600px; /* 限制最大宽度 */
     margin-left: auto;
     margin-right: auto;
 }
@@ -463,10 +507,6 @@ input:focus, select:focus {
     border-radius: 15px;
     box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
     background-color: white;
-    max-height: 500px; /* 限制最大高度 */
-    width: 100%;
-    height: auto;
-    object-fit: contain;
 }
 /* 添加canvas响应式样式 */
 #textCanvas {
@@ -505,18 +545,18 @@ input:focus, select:focus {
 
 .drop-zone {
     border: 3px dashed var(--border-color);
-    border-radius: 15px;
+    border-radius: 12px;
     padding: 2rem;
     text-align: center;
-    background: white;
+    background: rgba(255,255,255,0.05);
     transition: all 0.3s;
     cursor: pointer;
 }
 
 .drop-zone:hover,
 .drop-zone.dragover {
-    border-color: var(--primary-dark);
-    background: var(--panel-background);
+    border-color: var(--border-focus);
+    background: rgba(76, 175, 80, 0.1);
 }
 
 .drop-zone-content svg {
@@ -538,32 +578,34 @@ input:focus, select:focus {
 .select-file-btn {
     margin-top: 1rem;
     padding: var(--button-padding);
-    background: var(--primary-color);
+    background: linear-gradient(180deg, #4CAF50 0%, #388E3C 100%);
     color: white;
-    border: none;
-    border-radius: 15px;
+    border: 4px solid #2E7D32;
+    border-radius: 8px;
+    font-family: 'Minecraft', 'Microsoft YaHei', sans-serif;
     font-size: var(--button-font-size);
     cursor: pointer;
-    transition: transform 0.3s, background 0.3s, box-shadow 0.3s;
+    transition: all 0.2s ease;
     height: var(--button-height);
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 4px 0 #1B5E20, 0 6px 20px rgba(0,0,0,0.3);
     margin: var(--button-margin);
     font-weight: bold;
     min-width: 120px;
+    text-shadow: 2px 2px 0 rgba(0,0,0,0.3);
 }
 
 .select-file-btn:hover {
-    background: var(--primary-dark);
-    transform: translateY(-3px);
-    box-shadow: 0 6px 10px rgba(0, 0, 0, 0.15);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 0 #1B5E20, 0 8px 25px rgba(0,0,0,0.4);
+    background: linear-gradient(180deg, #5CBF60 0%, #48A048 100%);
 }
 
 .select-file-btn:active {
-    transform: translateY(-1px);
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    transform: translateY(2px);
+    box-shadow: 0 2px 0 #1B5E20, 0 4px 15px rgba(0,0,0,0.3);
 }
 
 .file-info {
@@ -586,24 +628,27 @@ input:focus, select:focus {
 }
 
 .remove-file-btn {
-    background: var(--primary-color);
+    background: linear-gradient(180deg, #dc3545 0%, #c82333 100%);
     color: white;
-    border: none;
-    border-radius: 15px;
+    border: 3px solid #a02020;
+    border-radius: 6px;
     width: 30px;
     height: 30px;
     font-size: 1rem;
     cursor: pointer;
-    transition: all 0.3s;
+    transition: all 0.2s ease;
     display: flex;
     align-items: center;
     justify-content: center;
+    box-shadow: 0 3px 0 #801515, 0 4px 10px rgba(0,0,0,0.3);
+    font-family: 'Minecraft', 'Microsoft YaHei', sans-serif;
+    text-shadow: 1px 1px 0 rgba(0,0,0,0.3);
 }
 
 button.remove-file-btn:hover {
-    background: #dc3545 !important;
-    transform: translateY(-3px);
-    box-shadow: 0 6px 10px rgba(0, 0, 0, 0.15);
+    transform: translateY(-2px);
+    box-shadow: 0 5px 0 #801515, 0 6px 15px rgba(0,0,0,0.4);
+    background: linear-gradient(180deg, #e04556 0%, #d03040 100%);
 }
 
 .batch-progress {
@@ -682,13 +727,16 @@ button.remove-file-btn:hover {
     justify-content: center;
     align-items: center;
     overflow: hidden;
+    position: relative;
+    z-index: 1;
 }
 
 .home-main-card {
     background: var(--card-background);
+    border: 4px solid #4a4a4a;
+    border-radius: 12px;
     padding: var(--card-padding);
-    border-radius: 30px;
-    box-shadow: 0 15px 40px var(--shadow-color);
+    box-shadow: 0 20px 60px var(--shadow-color);
     max-width: var(--card-max-width);
     margin: var(--card-margin);
     text-align: center;
@@ -697,13 +745,15 @@ button.remove-file-btn:hover {
 }
 
 .home-h1 {
+    font-family: 'Minecraft', sans-serif;
     font-size: 2.2rem;
-    color: #007bff;
+    color: var(--secondary-color);
     margin-bottom: 1rem;
+    text-shadow: 2px 2px 0 rgba(0,0,0,0.3);
 }
 
 .desc {
-    color: #666;
+    color: #b0b0b0;
     line-height: 1.8;
     margin-bottom: 3rem;
 }
@@ -718,26 +768,35 @@ button.remove-file-btn:hover {
 }
 
 .nav-menu .menu-btn {
-    padding: 1rem 1.2rem;
-    border: none;
-    border-radius: 15px;
-    background: #87ceeb;
+    padding: 1rem 1.5rem;
+    border: 4px solid #2E7D32;
+    border-radius: 8px;
+    background: linear-gradient(180deg, #4CAF50 0%, #388E3C 100%);
     cursor: pointer;
-    transition: transform 0.3s;
+    transition: all 0.2s ease;
+    font-family: 'Minecraft', sans-serif;
     font-size: 1rem;
     color: white;
     font-weight: bold;
-    height: 54px;
+    height: 55px;
     display: flex;
     align-items: center;
     justify-content: center;
     text-decoration: none;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 4px 0 #1B5E20, 0 6px 20px rgba(0,0,0,0.3);
+    text-shadow: 2px 2px 0 rgba(0,0,0,0.3);
+    min-width: 130px;
 }
 
 .nav-menu .menu-btn:hover {
-    background: #63b8ff;
-    transform: translateY(-3px);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 0 #1B5E20, 0 8px 25px rgba(0,0,0,0.4);
+    background: linear-gradient(180deg, #5CBF60 0%, #48A048 100%);
+}
+
+.nav-menu .menu-btn:active {
+    transform: translateY(2px);
+    box-shadow: 0 2px 0 #1B5E20, 0 4px 15px rgba(0,0,0,0.3);
 }
 
 .icon-wrapper {
@@ -776,31 +835,49 @@ button.remove-file-btn:hover {
     top: 0;
     width: 100%;
     height: 100vh;
-    background-color: rgba(0, 0, 0, 0.8);
+    background-color: var(--modal-overlay);
     align-items: center;
     justify-content: center;
+    backdrop-filter: blur(4px);
 }
 
 .home-modal-content {
-    background-color: white;
-    padding: 30px 25px;
+    background: var(--card-background);
+    border: 4px solid #4a4a4a;
     border-radius: 12px;
-    box-shadow: 0 0 20px rgba(0, 0, 0, 0.3);
+    padding: 30px 25px;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.5);
     text-align: center;
     position: relative;
+    max-width: 500px;
+    width: 90%;
 }
 
 .close {
     position: absolute;
     top: 18px;
     right: 18px;
-    color: #333;
+    color: #e0e0e0;
     font-size: 24px;
     cursor: pointer;
+    width: 40px;
+    height: 40px;
+    border: none;
+    background: rgba(255,255,255,0.2);
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+}
+
+.close:hover {
+    background: rgba(255,255,255,0.3);
+    transform: scale(1.1);
 }
 
 .modal-desc {
-    color: #666;
+    color: #e0e0e0;
     font-size: 1.1rem;
     line-height: 1.6;
     margin-bottom: 0;
@@ -810,7 +887,7 @@ button.remove-file-btn:hover {
     margin-top: 15px;
     display: inline-block;
     font-size: 0.9rem;
-    color: #333;
+    color: #e0e0e0;
 }
 
 .music-control input {
@@ -826,9 +903,10 @@ button.remove-file-btn:hover {
     aspect-ratio: 1 / 1;
     cursor: pointer;
     overflow: hidden;
-    border-radius: 6px;
-    box-shadow: 0 6px 16px rgba(0,0,0,0.12);
+    border-radius: 8px;
+    box-shadow: 0 6px 20px rgba(0,0,0,0.4);
     margin: 0 auto;
+    border: 3px solid #4a4a4a;
 }
 
 /* 电脑屏幕（≥768px） */
@@ -891,13 +969,29 @@ button.remove-file-btn:hover {
     justify-content: center;
     align-items: center;
     overflow: hidden;
+    position: relative;
+    min-height: 100vh;
+    background: var(--background-gradient);
+}
+
+.more-features-body::before {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-image: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.03'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+    pointer-events: none;
+    z-index: 0;
 }
 
 .more-features-main-card {
     background: var(--card-background);
+    border: 4px solid #4a4a4a;
+    border-radius: 12px;
     padding: var(--card-padding);
-    border-radius: 30px;
-    box-shadow: 0 15px 40px var(--shadow-color);
+    box-shadow: 0 20px 60px var(--shadow-color);
     max-width: var(--card-max-width);
     margin: var(--card-margin);
     text-align: center;
@@ -921,34 +1015,40 @@ button.remove-file-btn:hover {
 }
 
 .active-btn {
-    background: var(--primary-color);
+    background: linear-gradient(180deg, #4CAF50 0%, #388E3C 100%);
+    border-color: #2E7D32;
 }
 
 .disabled-btn {
     background: var(--disabled-color);
     color: #999;
     cursor: not-allowed;
+    border-color: #444;
+    box-shadow: 0 2px 0 #333, 0 4px 10px rgba(0,0,0,0.2);
+    text-shadow: none;
 }
 
 .more-features-h1 {
+    font-family: 'Minecraft', sans-serif;
     font-size: 1.8rem;
-    color: #007bff;
+    color: #FFD700;
     margin-bottom: 1.5rem;
     display: flex;
     align-items: center;
     justify-content: center;
+    text-shadow: 2px 2px 0 rgba(0,0,0,0.3);
 }
 
 .contact-info {
     font-size: 0.9rem;
-    color: #666;
+    color: #b0b0b0;
     margin-top: 1rem;
 }
 
 /* 404页面样式 */
 .error-body {
-    font-family: 'Poppins', sans-serif;
-    background-color: #e0f4ff;
+    font-family: 'Minecraft', 'Microsoft YaHei', sans-serif;
+    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
     margin: 0;
     padding: 0;
     display: flex;
@@ -957,23 +1057,37 @@ button.remove-file-btn:hover {
     min-height: 100vh;
     text-align: center;
     overflow: hidden;
+    position: relative;
+}
+
+.error-body::before {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-image: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.03'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+    pointer-events: none;
 }
 
 .error-container {
     position: relative;
-    width: 450px; /* 适度增加宽度（原400px） */
-    padding: 45px; /* 适度增加内边距（原40px） */
-    background-color: white;
-    border-radius: 10px;
-    box-shadow: 0 0 12px rgba(0, 0, 0, 0.12); /* 轻微增强阴影 */
+    width: 450px;
+    padding: 45px;
+    background: linear-gradient(180deg, #2d2d2d 0%, #1a1a1a 100%);
+    border: 4px solid #4a4a4a;
+    border-radius: 12px;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.5);
     animation: fadeInUp 1s ease-in-out;
+    z-index: 1;
 }
 
 .error-icon {
     width: 120px;
     height: 120px;
     margin: 0 auto -30px;
-    transition: transform 0.3s ease; /* 保持过渡效果 */
+    transition: transform 0.3s ease;
     -webkit-user-select: none;
     -moz-user-select: none;
     -ms-user-select: none;
@@ -981,22 +1095,24 @@ button.remove-file-btn:hover {
 }
 
 .error-icon:hover {
-    transform: scale(1.1); /* 鼠标悬停时放大10% */
+    transform: scale(1.1);
 }
 
 .error-h1 {
-    font-size: 56px; /* 适度增大标题（原48px） */
-    color: #333;
-    margin-bottom: 25px; /* 微调间距 */
+    font-family: 'Minecraft', sans-serif;
+    font-size: 56px;
+    color: #FFD700;
+    margin-bottom: 25px;
     -webkit-user-select: none;
     -moz-user-select: none;
     -ms-user-select: none;
     user-select: none;
+    text-shadow: 2px 2px 0 rgba(0,0,0,0.3);
 }
 
 .error-p {
     font-size: 20px;
-    color: #666;
+    color: #b0b0b0;
     margin-bottom: 0;
     -webkit-user-select: none;
     -moz-user-select: none;
@@ -1137,7 +1253,7 @@ button.remove-file-btn:hover {
     body {
         padding: 0;
         margin: 0;
-        background: var(--background-color);
+        background: var(--background-gradient);
         -webkit-text-size-adjust: 100%;
         -ms-text-size-adjust: 100%;
         text-size-adjust: 100%;
@@ -1159,9 +1275,10 @@ button.remove-file-btn:hover {
     .home-main-card {
         width: 100%;
         margin: 82px 0;
-        border-radius: 16px;
-        padding: 3rem 0.8rem 1.5rem 0.8rem;
-        box-shadow: 0 8px 24px rgba(135, 206, 235, 0.25);
+        border-radius: 12px;
+        border: 3px solid #4a4a4a;
+        padding: 2rem 1rem 1.5rem 1rem;
+        box-shadow: 0 15px 40px rgba(0,0,0,0.5);
         -webkit-transform: translateZ(0);
         transform: translateZ(0);
     }
@@ -1176,6 +1293,7 @@ button.remove-file-btn:hover {
         font-size: 0.85rem;
         margin-bottom: 2rem;
         line-height: 1.6;
+        color: #b0b0b0;
     }
 
     /* 导航菜单 - 2x2网格布局 */
@@ -1197,13 +1315,14 @@ button.remove-file-btn:hover {
         height: auto;
         min-height: 44px;
         font-size: 0.9rem;
-        padding: 0.5rem 0.3rem;
+        padding: 0.6rem 0.5rem;
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
-        border-radius: 12px;
-        box-shadow: 0 3px 5px rgba(0, 0, 0, 0.1);
-        background: #87ceeb;
+        border-radius: 8px;
+        border: 3px solid #2E7D32;
+        box-shadow: 0 3px 0 #1B5E20, 0 4px 10px rgba(0,0,0,0.3);
+        background: linear-gradient(180deg, #4CAF50 0%, #388E3C 100%);
         -webkit-appearance: none;
         -moz-appearance: none;
         appearance: none;
@@ -1246,7 +1365,7 @@ button.remove-file-btn:hover {
         margin: 10px 0;
         border-radius: 16px;
         padding: 1.5rem 0.8rem;
-        box-shadow: 0 8px 24px rgba(135, 206, 235, 0.25);
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
     }
 
     .more-features-h1 {
@@ -1271,8 +1390,9 @@ button.remove-file-btn:hover {
         min-height: 44px;
         font-size: 0.95rem;
         padding: 0.6rem 0.8rem;
-        border-radius: 15px;
-        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        border-radius: 8px;
+        border: 3px solid #2E7D32;
+        box-shadow: 0 3px 0 #1B5E20, 0 4px 10px rgba(0,0,0,0.3);
     }
 
     /* 通用卡片手机端适配 */
@@ -1281,7 +1401,7 @@ button.remove-file-btn:hover {
         margin: 10px 0;
         border-radius: 16px;
         padding: 1.2rem 0.8rem;
-        box-shadow: 0 8px 24px rgba(135, 206, 235, 0.25);
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
     }
 
     h1 {
@@ -1345,31 +1465,41 @@ button.remove-file-btn:hover {
         max-width: none !important;
         border-radius: 16px;
         padding: 1.2rem 0.8rem;
-        box-shadow: 0 8px 24px rgba(135, 206, 235, 0.25);
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
     }
 }
 
 @media (min-width: 769px) {
     .home-main-card {
-        padding: 6rem 4rem;
+        padding: 5rem 4rem;
         max-width: 1200px;
+        border: 4px solid #4a4a4a;
+        border-radius: 12px;
+        box-shadow: 0 20px 60px rgba(0,0,0,0.5);
     }
 
     .home-h1 {
+        font-family: 'Minecraft', sans-serif;
         font-size: 3rem;
         margin-bottom: 2.5rem;
+        color: #FFD700;
+        text-shadow: 2px 2px 0 rgba(0,0,0,0.3);
     }
 
     .desc {
         font-size: 1.3rem;
         line-height: 2.2;
         margin-bottom: 4rem;
+        color: #b0b0b0;
     }
 
     .nav-menu .menu-btn {
-        padding: 1.5rem 2rem;
-        font-size: 1.3rem;
-        height: 70px;
+        padding: 1.2rem 1.8rem;
+        font-size: 1.2rem;
+        height: 65px;
+        border: 4px solid #2E7D32;
+        border-radius: 8px;
+        box-shadow: 0 4px 0 #1B5E20, 0 6px 20px rgba(0,0,0,0.3);
     }
 
     .nav-menu {
@@ -1420,26 +1550,30 @@ button.remove-file-btn:hover {
 .document-container {
     width: 80%;
     margin: 0 auto;
-    background-color: white;
-    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-    padding: 20px;
-    border-radius: 5px;
+    background: var(--card-background);
+    border: 4px solid #4a4a4a;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+    padding: 30px;
+    border-radius: 12px;
+    position: relative;
+    z-index: 1;
 }
 
 .document-h1 {
     text-align: center;
-    color: #2ecc71;
+    color: #FFD700;
     margin-bottom: 20px;
-    font-family: Arial, sans-serif;
+    font-family: 'Minecraft', 'Microsoft YaHei', sans-serif;
     font-size: 34px;
     font-weight: bold;
+    text-shadow: 2px 2px 0 rgba(0,0,0,0.3);
 }
 
 .document-h2 {
-    color: #63b8ff;
-    border-bottom: 2px solid #63b8ff;
+    color: #4CAF50;
+    border-bottom: 2px solid #4CAF50;
     padding-bottom: 10px;
-    font-family: Arial, sans-serif;
+    font-family: 'Minecraft', 'Microsoft YaHei', sans-serif;
     font-size: 26px;
     font-weight: bold;
     margin-bottom: 15px;
@@ -1455,7 +1589,7 @@ button.remove-file-btn:hover {
     line-height: 1.6;
     font-family: Arial, sans-serif;
     font-size: 18px;
-    color: black;
+    color: var(--text-color);
 }
 
 .document-li:before {
@@ -1470,13 +1604,13 @@ button.remove-file-btn:hover {
     line-height: 1.6;
     font-family: Arial, sans-serif;
     font-size: 18px;
-    color: black;
+    color: var(--text-color);
     margin-bottom: 15px;
 }
 
 .document-p a {
     font-size: 22px;
-    color: blue;
+    color: #63b8ff;
     font-weight: bold;
     text-decoration: underline;
 }
