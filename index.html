@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <title>南风工具箱</title>
-    <link rel="icon" href="Picture/Repeating_Command_Block.png" type="image/webp">
+    <link rel="icon" href="Picture/Repeating_Command_Block.png" type="image/png">
     <script src="js/particles.js"></script>
     <script src="js/baidu_statistics.js"></script>
     <link rel="stylesheet" href="css/global.css">
@@ -12,7 +12,6 @@
 <body class="home-body">
     <canvas id="canvas"></canvas>
     <div id="v5" class="home-main-card">
-        <!-- 右上角通知按钮 -->
         <button id="modalBtn" class="corner-btn">
             <img src="Picture/Creeper_Charge_Banner_Pattern.png" alt="通知" class="corner-btn-img">
         </button>
@@ -46,7 +45,9 @@
         </div>
     </div>
 
-    <audio id="bgMusic" src="music/录音.m4a" loop preload="auto"></audio>
+    <audio id="bgMusic" src="music/录音.m4a" loop preload="auto">
+        您的浏览器不支持音频播放。
+    </audio>
 
     <script>
         let bgMusic;
@@ -194,19 +195,12 @@
             container.classList.toggle('active');
         });
 
-        document.addEventListener('touchmove', function(e) {
-            e.preventDefault();
-        }, { passive: false });
-
-        document.addEventListener('wheel', function(e) {
-            e.preventDefault();
-        }, { passive: false });
+        // 使用CSS overflow: hidden 代替全局事件阻止，避免影响移动端滚动
+        // 页面滚动控制已通过 CSS body overflow 实现
 
         document.addEventListener('selectstart', function(e) {
             e.preventDefault();
         });
-
-
     </script>
 </body>
 </html>
