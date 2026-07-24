@@ -75,6 +75,9 @@
                 <button id="back-to-levels" class="menu-btn">返回关卡选择</button>
             </div>
         </div>
+        <div class="nav-menu" style="margin-top: 1rem;">
+            <a href="../index.html" class="menu-btn">返回首页</a>
+        </div>
 
         <!-- 成就页 -->
         <div id="achievements-page" class="page mode-panel">
@@ -91,7 +94,8 @@
         const gameData = {
             currentLevel: 1,
             completedLevels: [],
-            currentTitle: "指令新手"
+            currentTitle: "指令新手",
+            consecutiveCorrect: 0
         };
 
         // 成就数据
@@ -128,7 +132,7 @@
             { id: 21, title: "记分板操作", text: "给名为\"coins\"的目标添加10分的指令是什么？", answer: "/scoreboard players add @s coins 10", difficulty: "中等", hint: "使用scoreboard players指令" },
             { id: 22, title: "传送至实体", text: "传送到最近的玩家的指令是什么？", answer: "/tp @s @p", difficulty: "简单", hint: "使用tp指令配合选择器" },
             { id: 23, title: "时间查询", text: "查询当前游戏时间的指令是什么？", answer: "/time query daytime", difficulty: "简单", hint: "使用time query指令" },
-            { id: 24, title: "天气查询", text: "查询当前天气的指令是什么？", answer: "/weather query", difficulty: "简单", hint: "使用weather指令" },
+            { id: 24, title: "雷雨天气", text: "设置天气为雷雨的指令是什么？", answer: "/weather thunder", difficulty: "简单", hint: "使用weather thunder指令" },
             { id: 25, title: "清除效果", text: "清除自己所有效果的指令是什么？", answer: "/effect clear @s", difficulty: "简单", hint: "使用effect clear指令" },
             { id: 26, title: "设置出生点", text: "设置当前位置为出生点的指令是什么？", answer: "/spawnpoint @s", difficulty: "简单", hint: "使用spawnpoint指令" },
             { id: 27, title: "传送至坐标", text: "传送到坐标(100,64,100)的指令是什么？", answer: "/tp @s 100 64 100", difficulty: "简单", hint: "使用tp指令" },
@@ -175,6 +179,7 @@
                 gameData.currentLevel = data.currentLevel || 1;
                 gameData.completedLevels = data.completedLevels || [];
                 gameData.currentTitle = data.currentTitle || "指令新手";
+                gameData.consecutiveCorrect = data.consecutiveCorrect || 0;
                 
                 // 更新UI
                 document.getElementById('current-title').textContent = gameData.currentTitle;
@@ -303,6 +308,9 @@
                     resultMessage.textContent = '恭喜你，回答正确！';
                     resultDetails.textContent = `你成功完成了第${level.id}关: ${level.title}`;
                     
+                    // 更新连续答对计数器
+                    gameData.consecutiveCorrect++;
+                    
                     // 如果还没有完成过这一关，则添加到完成列表
                     if (!gameData.completedLevels.includes(level.id)) {
                         gameData.completedLevels.push(level.id);
@@ -320,6 +328,9 @@
                     resultIcon.textContent = '❌';
                     resultMessage.textContent = '回答错误，请再试一次！';
                     resultDetails.textContent = `正确答案是: ${level.answer}`;
+                    
+                    // 答错时重置连续答对计数器
+                    gameData.consecutiveCorrect = 0;
                     
                     // 显示重新挑战按钮
                     const retryButton = document.getElementById('retry-button');
@@ -370,8 +381,7 @@
                         achievement.unlocked = true;
                     } else if (achievement.id === 4 && gameData.completedLevels.length >= 50) {
                         achievement.unlocked = true;
-                    } else if (achievement.id === 5 && gameData.completedLevels.length >= 5) {
-                        // 这里简化处理，实际应该检查连续答对
+                    } else if (achievement.id === 5 && gameData.consecutiveCorrect >= 5) {
                         achievement.unlocked = true;
                     }
                 });
@@ -491,15 +501,8 @@
                 initEventListeners();
                 renderLevelGrid();
                 
-                // 从用户未完成的第一关开始
-                let nextLevel = 1;
-                for (let i = 1; i <= 50; i++) {
-                    if (!gameData.completedLevels.includes(i)) {
-                        nextLevel = i;
-                        break;
-                    }
-                }
-                loadLevel(nextLevel);
+                // 显示起始页，让用户选择是否开始挑战
+                showPage('start-page');
             } catch (error) {
                 console.error('初始化游戏时出错:', error);
             }

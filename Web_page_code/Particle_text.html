@@ -1,8 +1,9 @@
+<!DOCTYPE html>
 <html lang="zh-CN"><head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>南风工具箱</title>
-    <link rel="icon" href="../Picture/Repeating_Command_Block.png" type="image/webp">
+    <link rel="icon" href="../Picture/Repeating_Command_Block.png" type="image/png">
     <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
     <link rel="stylesheet" href="../css/global.css">
     <script src="../js/particles.js"></script>
@@ -16,7 +17,7 @@
         <h1>FUNCTION 文字粒子生成工具</h1>
         <div class="button-container">
             <button id="hollowModeButton" class="btn">空心文字模式</button>
-            <button id="generateButton" disabled>生成并下载文件</button>
+            <button id="generateButton" class="btn" disabled>生成并下载文件</button>
             <span id="fileCountHint" class="hint" aria-live="polite">0 个文件</span>
         </div>
 
@@ -52,6 +53,9 @@
         <!-- 修改画布宽度，保持高度不变 -->
         <canvas id="textCanvas"></canvas>
         <div class="note">温馨提示：最多支持30个字符，数字和英文可输入更多，中文建议5个一组。当输入达到上限时，将无法继续输入，请合理控制文本长度。</div>
+        <div class="nav-menu" style="margin-top: 1rem;">
+            <a href="../index.html" class="menu-btn">返回首页</a>
+        </div>
     </div>
 
     <script>
@@ -207,8 +211,8 @@
                 });
                 const textHeight = fontSize;
                 
-                // 计算左右边距 - 保持与上面一致的计算方式
-                const horizontalPadding = canvasCopy.width * 0.1;
+                // 计算左右边距 - 与drawTextOnCanvas保持一致的计算方式
+                const horizontalPadding = 10; // 固定小边距
                 const availableWidth = canvasCopy.width - horizontalPadding * 2;
                 const xCopy = horizontalPadding + (availableWidth - maxWidth) / 2;
                 const yCopy = (canvasCopy.height + textHeight) / 2;
@@ -241,7 +245,7 @@
                     }
                 }
         
-                const commandCount = functionContent.split('\n').length;
+                const commandCount = functionContent.split('\n').filter(l => l.trim()).length;
                 fileCount = commandCount > 0? Math.ceil(commandCount / 10000) : 1;
             } else {
                 // 获取canvas的实际显示尺寸
@@ -285,7 +289,8 @@
                 }
             }
         
-            const commandCount = functionContent.split('\n').length;
+            const commandLines = functionContent.split('\n').filter(l => l.trim());
+            const commandCount = commandLines.length;
             const fileCount = commandCount > 0? Math.ceil(commandCount / 10000) : 1;
         
             // 创建一个zip文件
@@ -294,18 +299,20 @@
             
             // 将指令内容按文件拆分并添加到zip
             for (let i = 0; i < commandCount; i += linesPerFile) {
-                const fileContent = functionContent.split('\n').slice(i, i + linesPerFile).join('\n');
+                const fileContent = commandLines.slice(i, i + linesPerFile).join('\n');
                 zip.file(`particle_commands_${Math.floor(i / linesPerFile) + 1}.mcfunction`, fileContent);
             }
         
             // 生成并下载zip文件
             const content = await zip.generateAsync({type:"blob"});
             const link = document.createElement('a');
-            link.href = URL.createObjectURL(content);
+            const url = URL.createObjectURL(content);
+            link.href = url;
             link.download = 'particle_commands.zip';
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);
+            URL.revokeObjectURL(url);
         
             // 不显示成功消息
         });

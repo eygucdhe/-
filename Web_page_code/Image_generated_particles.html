@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>南风工具箱</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
-    <link rel="icon" href="../Picture/Repeating_Command_Block.png" type="image/webp">
+    <link rel="icon" href="../Picture/Repeating_Command_Block.png" type="image/png">
     <link rel="stylesheet" href="../css/global.css">
     <script src="../js/particles.js"></script>
     <script src="../js/baidu_statistics.js"></script>
@@ -18,7 +18,7 @@
         <h1>FUNCTION 图片粒子生成工具</h1>
         
         <div class="button-container">
-            <button id="directionButton" class="btn">切换为垂直模式</button>
+            <button id="directionButton" class="btn">切换为XZ模式</button>
             <button id="generateButton" class="btn" disabled>生成指令下载</button>
             <span id="fileCountHint" class="hint" aria-live="polite">0 个文件</span>
         </div>
@@ -29,13 +29,13 @@
         <div class="input-group">
             <label>
                 图片尺寸（正方形像素）：
-                <input type="number" id="sizeInput" class="form-control" value="100" max="500">
+                <input type="number" id="sizeInput" class="form-control" value="100" min="10" max="500">
             </label>
         </div>
         <div class="input-group">
             <label>
                 粒子密度：
-                <input type="number" id="densityInput" class="form-control" value="5" min="0.1" max="99" step="0.1" placeholder="数值越小越密集">
+                <input type="number" id="densityInput" class="form-control" value="5" min="1" max="20" step="0.1" placeholder="数值越小越密集">
             </label>
         </div>
         
@@ -56,6 +56,9 @@
         <div class="note">
             温馨提示：图片将被调整为正方形，颜色、细节和亮度等保持不变
         </div>
+        <div class="nav-menu" style="margin-top: 1rem;">
+            <a href="../index.html" class="menu-btn">返回首页</a>
+        </div>
     </div>
 
     <script>
@@ -63,18 +66,18 @@
         class ParticleImageGenerator {
             constructor() {
                 // DOM元素引用
-            this.directionButton = document.getElementById('directionButton');
-            this.generateButton = document.getElementById('generateButton');
-            this.sizeInput = document.getElementById('sizeInput');
-            this.densityInput = document.getElementById('densityInput');
-            this.coordinatesInput = document.getElementById('coordinates');
-            this.browseButton = document.getElementById('browseButton');
-            this.imageInput = document.getElementById('imageInput');
-            // 修复：统一变量名
-            this.fileCountHint = document.getElementById('fileCountHint');
-            this.previewCanvas = document.getElementById('previewCanvas');
-            this.canvasContainer = this.previewCanvas.parentElement;
-            this.ctx = this.previewCanvas.getContext('2d');
+                this.directionButton = document.getElementById('directionButton');
+                this.generateButton = document.getElementById('generateButton');
+                this.sizeInput = document.getElementById('sizeInput');
+                this.densityInput = document.getElementById('densityInput');
+                this.coordinatesInput = document.getElementById('coordinates');
+                this.browseButton = document.getElementById('browseButton');
+                this.imageInput = document.getElementById('imageInput');
+                // 修复：统一变量名
+                this.fileCountHint = document.getElementById('fileCountHint');
+                this.previewCanvas = document.getElementById('previewCanvas');
+                this.canvasContainer = this.previewCanvas.parentElement;
+                this.ctx = this.previewCanvas.getContext('2d');
                 
                 // 应用状态
                 this.isXZMode = false; // false: XY模式, true: XZ模式
@@ -120,45 +123,23 @@
                 this.initialize();
             }
 
-            // 初始化画布
+            // 初始化正方形画布
             initCanvas() {
-                // 初始设置画布尺寸
-                this.updateCanvasSize();
+                // 设置画布尺寸为正方形
+                const containerWidth = this.canvasContainer.clientWidth;
+                this.previewCanvas.width = containerWidth;
+                this.previewCanvas.height = containerWidth;
                 
                 // 窗口大小变化时重新设置画布尺寸
                 window.addEventListener('resize', () => {
-                    this.updateCanvasSize();
-                    // 重新绘制图片
+                    const newWidth = this.canvasContainer.clientWidth;
+                    this.previewCanvas.width = newWidth;
+                    this.previewCanvas.height = newWidth;
+                    // 重新绘制图片保持正方形显示
                     if (this.originalImage) {
                         this.renderImagePreview(this.originalImage);
                     }
                 });
-            }
-
-            // 根据图片比例更新画布尺寸
-            updateCanvasSize() {
-                const containerWidth = this.canvasContainer.clientWidth;
-                const maxHeight = 500; // 最大高度限制
-                
-                if (this.originalImage) {
-                    // 根据图片宽高比计算画布尺寸
-                    const imgRatio = this.originalImage.width / this.originalImage.height;
-                    let canvasWidth = containerWidth;
-                    let canvasHeight = canvasWidth / imgRatio;
-                    
-                    // 如果计算出的高度超过最大高度，则按高度限制计算
-                    if (canvasHeight > maxHeight) {
-                        canvasHeight = maxHeight;
-                        canvasWidth = canvasHeight * imgRatio;
-                    }
-                    
-                    this.previewCanvas.width = canvasWidth;
-                    this.previewCanvas.height = canvasHeight;
-                } else {
-                    // 没有图片时，默认使用正方形
-                    this.previewCanvas.width = containerWidth;
-                    this.previewCanvas.height = Math.min(containerWidth, maxHeight);
-                }
             }
 
             // 初始化应用
@@ -171,43 +152,30 @@
 
             // 设置事件监听器
             setupEventListeners() {
+                // 方向切换按钮
                 this.directionButton.addEventListener('click', () => this.toggleDirection());
+                // 生成按钮
                 this.generateButton.addEventListener('click', () => this.generateParticles());
+                // 浏览按钮
                 this.browseButton.addEventListener('click', () => this.imageInput.click());
+                // 图片选择变化
                 this.imageInput.addEventListener('change', () => this.handleImageChange());
+                // 尺寸输入变化
                 this.sizeInput.addEventListener('input', () => {
                     if (this.originalImage) {
                         this.renderImagePreview(this.originalImage);
                     }
                 });
-                this.sizeInput.addEventListener('blur', () => {
-                    if (this.sizeInput.value !== '') {
-                        let val = parseInt(this.sizeInput.value);
-                        if (val > 500) this.sizeInput.value = 500;
-                        if (val < 1) this.sizeInput.value = 1;
-                        if (this.originalImage) {
-                            this.renderImagePreview(this.originalImage);
-                        }
-                    }
-                });
-                this.densityInput.addEventListener('input', () => {
-                    this.updateFileCount();
-                });
-                this.densityInput.addEventListener('blur', () => {
-                    if (this.densityInput.value !== '') {
-                        let val = parseFloat(this.densityInput.value);
-                        if (val > 99) this.densityInput.value = 99;
-                        if (val < 0.1) this.densityInput.value = 0.1;
-                        this.updateFileCount();
-                    }
-                });
+                // 密度输入变化
+                this.densityInput.addEventListener('input', () => this.updateFileCount());
+                // 阻止文本选择
                 document.addEventListener('selectstart', (e) => e.preventDefault());
             }
 
             // 切换方向模式
             toggleDirection() {
-                this.isXZMode = !this.isXZMode;
-                this.directionButton.textContent = this.isXZMode ? '切换为平面模式' : '切换为垂直模式';
+                this.isXZMode =!this.isXZMode;
+                this.directionButton.textContent = this.isXZMode? '切换为XY模式' : '切换为XZ模式';
                 this.updatePreview();
             }
 
@@ -229,7 +197,6 @@
                 const img = new Image();
                 img.onload = () => {
                     this.originalImage = img; // 保存原始图片引用
-                    this.updateCanvasSize(); // 根据图片比例更新画布尺寸
                     this.renderImagePreview(img);
                     // 添加更新按钮状态的代码
                     this.updateButtonState();
@@ -237,24 +204,24 @@
                 img.src = imageUrl;
             }
 
-            // 渲染图片预览 - 根据图片比例自适应
+            // 渲染图片预览 - 仅调整为正方形，保持其他元素不变
             renderImagePreview(img) {
-                const canvasWidth = this.previewCanvas.width;
-                const canvasHeight = this.previewCanvas.height;
+                // 确保画布是正方形
+                const canvasSize = this.previewCanvas.width;
                 const targetSize = parseInt(this.sizeInput.value) || 100;
                 
                 // 清除画布（保持白色背景）
                 this.ctx.fillStyle = 'white';
-                this.ctx.fillRect(0, 0, canvasWidth, canvasHeight);
+                this.ctx.fillRect(0, 0, canvasSize, canvasSize);
                 
                 // 计算缩放比例，保持图片原始比例
-                const ratio = Math.min(canvasWidth / img.width, canvasHeight / img.height);
+                const ratio = Math.min(canvasSize / img.width, canvasSize / img.height);
                 const scaledWidth = img.width * ratio;
                 const scaledHeight = img.height * ratio;
 
                 // 计算居中位置
-                const x = (canvasWidth - scaledWidth) / 2;
-                const y = (canvasHeight - scaledHeight) / 2;
+                const x = (canvasSize - scaledWidth) / 2;
+                const y = (canvasSize - scaledHeight) / 2;
 
                 // 绘制图片（居中显示，不拉伸，保持原始颜色和细节）
                 this.ctx.drawImage(img, x, y, scaledWidth, scaledHeight);
@@ -292,16 +259,11 @@
 
             // 清除预览
             clearPreview() {
-                const canvasWidth = this.previewCanvas.width;
-                const canvasHeight = this.previewCanvas.height;
+                const canvasSize = this.previewCanvas.width;
                 this.ctx.fillStyle = 'white';
-                this.ctx.fillRect(0, 0, canvasWidth, canvasHeight);
+                this.ctx.fillRect(0, 0, canvasSize, canvasSize);
                 this.tempImageData = null;
                 this.originalImage = null;
-                // 重置画布为默认正方形
-                const containerWidth = this.canvasContainer.clientWidth;
-                this.previewCanvas.width = containerWidth;
-                this.previewCanvas.height = Math.min(containerWidth, 500);
                 // 这里已经正确使用了this.fileCountHint
                 this.fileCountHint.textContent = "0 文件";
                 this.generateButton.disabled = true;
