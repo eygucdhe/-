@@ -489,6 +489,22 @@
                         }
                     });
                 }
+
+                // 下一关按钮
+                const nextLevelBtn = document.getElementById('next-level-button');
+                if (nextLevelBtn) {
+                    nextLevelBtn.addEventListener('click', function() {
+                        goToNextLevel();
+                    });
+                }
+
+                // 重新挑战按钮
+                const retryBtn = document.getElementById('retry-button');
+                if (retryBtn) {
+                    retryBtn.addEventListener('click', function() {
+                        retryLevel();
+                    });
+                }
             } catch (error) {
                 console.error('初始化事件监听器时出错:', error);
             }
